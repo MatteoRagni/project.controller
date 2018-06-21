@@ -38,7 +38,7 @@
 // Globals
 unsigned long tic, toc;
 
-MachineState m;
+volatile MachineState m;
 
 /** \brief Alarm Function: Called when system goes in alarm state
  * 
@@ -55,8 +55,72 @@ void alarm_fnc(MachineState* m) {
   while (1) { loop(); } // Re-enters in the loop immediately
 }
 
+/** \brief Emergency button Interrupt routine
+ * 
+ * FIXME: I don't have a better strategy for this. The problem is that we are actually
+ * entering an interrupt service routine and we never exit from it. I'm not sure it
+ * works well, but we go in any way in a safe state. Probably a manual reboot is
+ * required after this and it is not a problem.
+ */
+void emergency_button_isr() {
+  m.alarm(&m);
+}
 
+/** \brief State Machine Running loop
+ * 
+ * Normal mode operation.
+ */
+void running_loop() {
+  m.presctrl->enable();
+  m.tempctrl->enable();
+
+  m.presctrl->run();
+  m.tempctrl->run();
+  m.storage->run();
+
+  m.serial->receive();
+
+  if (m.serial->is_ready()) {
+    // Here we can execute all the commands
+    if (m.command->command < CommandCode::CommandCodeSize)
+      cmd_ary[m.command->command](m.command->value, &m);
+  }
+}
+
+void pause_loop() {
+  m.presctrl->disable();
+  m.tempctrl->disable();
+  
+  m.serial->receive();
+  if (m.serial->is_ready()) {
+    // Here we can execute all the commands
+    if (m.command->command < CommandCode::CommandCodeSize)
+      cmd_ary[m.command->command](m.command->value, &m);
+  }
+}
+
+void alarm_loop() {
+  m.presctrl->disable();
+  m.tempctrl->disable();
+
+  m.serial->receive();
+  if (m.serial->is_ready()) {
+    // The only command we accept in serial on alarm is a reboot
+    if (m.command->command == CommandCode::SystemReboot)
+      cmd_system_reboot(m.command->value, &m);
+    // ... or saving current configuration in EEPROM
+    if (m.command->command == CommandCode::SaveStorageConfig)
+      cmd_save_storage_config(m.command->value, &m);
+  }
+}
+
+//  ___      _             
+// / __| ___| |_ _  _ _ __ 
+// \__ \/ -_)  _| || | '_ \
+// |___/\___|\__|\_,_| .__/
+//                   |_| 
 void setup() {
+  attachInterrupt(EMERGENCYBTN_PIN, emergency_button_isr, EMERGENCYBTN_MODE);
   // The first initialization shall aways be the serial parser
   // since it connects the machine state and the output buffer
   m.serial = new SerialParser(&m);
@@ -73,13 +137,21 @@ void setup() {
   toc = tic;
 }
 
-void running_loop() {
-  m.serial->
-}
-
+//  _                  
+// | |   ___  ___ _ __ 
+// | |__/ _ \/ _ \ '_ \
+// |____\___/\___/ .__/
+//               |_|   
 void loop() {
   toc = millis();
   if (((unsigned long)(toc - tic)) >= LOOP_TIMING) {
-
+    switch (m.state->state) {
+      case (StateCode::Alarm):
+        alarm_loop();
+      case (StateCode::Pause):
+        pause_loop();
+      case (StateCode::Running):
+        running_loop();
+    };
   }
 }

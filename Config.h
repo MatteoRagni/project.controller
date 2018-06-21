@@ -37,6 +37,10 @@
 // Real time loop timing
 #define LOOP_TIMING 20 /**< Defines the ms for timing the loop (must be enough for completing the loop) */
 
+// Emergency Button Configuration
+#define EMERGENCYBTN_PIN 0 /**< Pin for emergency button, must have Interrupt capabilities */
+#define EMERGENCYBTN_MODE RISING /**< Default mode for emergency button signal: valid are RISING, LOW, CHANGE, FALLING. Check on Arduino attachInterrupt documentation */
+
 // Communication Configurations
 #define SERIAL_PORT Serial      /**< Serial port used for communication */
 #define SERIAL_PORT_BAUD 115200 /**< Serial port baud speed (bps) */
@@ -77,12 +81,13 @@
 #define SERIAL_PARSER_PRESSURE_MIN 0.0  /**< Maximum accepted temperature set point in bar */
 #define SERIAL_PARSER_PRESSURE_MAX 30.0 /**< Maximum accepted temperature set point in bar */
 #define SERIAL_PARSER_KPI_MIN -99.0     /**< Minimum value for the PI gain */
-#define SERIAL_PARSER_KPI_MIN 99.0      /**< Maximum value for the PI gain */
+#define SERIAL_PARSER_KPI_MAX 99.0      /**< Maximum value for the PI gain */
 #define SERIAL_PARSER_PERIOD_MIN 1.0    /**< Minimum value for the square wave generation in secs */
 #define SERIAL_PARSER_PERIOD_MAX 30.0   /**< Maximum value for the square wave generation in secs */
 
 // Storage configuration
-#define STORAGE_REF_ADDRESS 0 /**< The default storage reference address offset */
+#define STORAGE_REF_ADDRESS 0   /**< The default storage reference address offset */
+#define STORAGE_FREQUENCY 1000  /**< Specify when to write current cycle number to EEPROM (1000 means every 1000 cycles) */
 
 // Defaults
 #define DEFAULT_T_MEAS 0.0         /**< Default value for measured temeprature at setup */
@@ -100,6 +105,6 @@
 #define DEFAULT_CONFIG 0x0         /**< Default initial configuration (everything off) */
 #define DEFAULT_STATE StateCode::SerialSetup /**< Default initial state for the machine */
 #define DEFAULT_P_LOW 0.0          /**< Default low pressure for reference generator */
-#define DEFAULT__HIGH 0.0          /**< Default high pressure for reference generator
+#define DEFAULT_P_HIGH 0.0          /**< Default high pressure for reference generator */
 
 #endif /* CONFIG_H_ */

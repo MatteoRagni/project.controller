@@ -32,6 +32,7 @@
 
 #include "Config.h"
 #include "Messages.h"
+#include "Machine.h"
 
 typedef union input_u {
   input_s s;
@@ -106,7 +107,7 @@ class SerialParser {
     output.s.max_cycle = DEFAULT_MAX_CYCLE;
     output.s.config = DEFAULT_CONFIG;
     output.s.state = DEFAULT_STATE;
-    output.s.check = lcr_check((const char*)output_buf, (size_t)output_size);
+    output.s.check = lcr_check((const char*)output.b, (size_t)output_size);
   };
 
   /** \brief Begins and syncronize the serial interface
@@ -125,6 +126,7 @@ class SerialParser {
         r = SERIAL_PORT.read();
       }
     }
+    m->state->state = StateCode::Waiting;
   };
 
   /** \brief Receives one char at the time, executes when a full command is receive
@@ -156,7 +158,8 @@ class SerialParser {
           data_ready = true;
         } else {
           // Raising the error if the checksum is not correct
-          error = true;
+          m->state->error = ErrorMessage::SerialCheck;
+          m->alarm(m);
         }
         idx = 0;
       }
@@ -171,6 +174,11 @@ class SerialParser {
    * 
    * The operation is made as blocking in order to avoid chenge in the output structure
    * while writing data to serial.
+   * 
+   * FIXME: Here I'm doing a blocking operation. It is performed only if requested via serial
+   * thus it is stil safe, but if the serial disconnects while sending with flush blocking
+   * everything, then I may have some problem. With enough timer one should define a timer
+   * for maximum transmission time and raise an alert if the threshold time is reached.
    */
   void send() {
     output.s.check = lcr_check((const char*)output.b, (size_t)output_size);

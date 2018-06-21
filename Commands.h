@@ -30,6 +30,7 @@
 #ifndef COMMANDS_H_
 #define COMMANDS_H_
 
+#include <avr/wdt.h>
 #include "Config.h"
 #include "Messages.h"
 #include "Machine.h"
@@ -46,7 +47,7 @@ inline float cmd_saturation(float &bottom, float &value, float &top) {
  */
 
 typedef enum CommandCode {
-  Hearthbit,                   /**< Command from the screen: it is alive! */
+  Hearthbeat,                   /**< Command from the screen: it is alive! */
   ManualTemperatureControl,    /**< Overrides (disabling) the temperature control */
   AutomaticTemperatureControl, /**< Enables the pressure control */
   ManualPressureControl,       /**< Overrides (disabling) the pressure control */
@@ -67,13 +68,17 @@ typedef enum CommandCode {
   SetReferencePeriod,          /**< Setup reference square wave period */
   SetReferenceDutyCycle,       /**< Setup reference square wave cycle */
   SystemReboot,                /**< Force an immediate system reboot */
+  StartCycle,                  /**< Starts the system (Running state) */
+  SaveStorageConfig,           /**< Save current configuration in the EEPROM */
+  LoadStorageConfig,           /**< Load storage config from EEPROM. Extremely risky, it may be corrupted data */
+  LoadStorageCycle,            /**< Load current cycle number from EEPROM. Extremely Risky it may be corrupted data */
   CommandCodeSize              /**< This last one is a size for the array of function pointers */
 } CommandCode;
 
 typedef void(*CommandAction)(float value, MachineState *m);
 
-void cmd_hearthbit(float value, MachineState *m) {
-  return;
+void cmd_hearthbeat(float value, MachineState *m) {
+  m->serial->send();
 }
 
 void cmd_manual_temperature_control(float value, MachineState *m) {
@@ -157,13 +162,33 @@ void cmd_set_reference_duty_cycle(float value, MachineState *m) {
   m->state->duty_cycle = constrain(value, 0.0, 1.0);
 }
 
-void cmd_set_system_reboot() {
-  // TODO: To be implemented!
+void cmd_system_reboot(float value, MachineState *m) {
+  m->tempctrl->disable();
+  m->tempctrl->disable();
+
+  wdt_enable(WDTO_30MS);
+  while (1) {};
+} 
+
+void cmd_start_cycle(float value, MachineState *m) {
+  m->state->state = StateCode::Running;
+}
+
+void cmd_save_storage_config(float value, MachineState *m) {
+  m->storage->save_config();
+}
+
+void cmd_load_storage_config(float value, MachineState *m) {
+  m->storage->load_config();
+}
+
+void cmd_load_storage_cycle(float value, MachineState *m) {
+  m->storage->load_cycle();
 }
 
 // TODO: The order of the function pointers MATTERS!
 const CommandAction cmd_ary[CommandCode::CommandCodeSize] = {
-  cmd_hearthbit,
+  cmd_hearthbeat,
   cmd_manual_temperature_control,
   cmd_automatic_temperature_control,
   cmd_manual_pressure_control,
@@ -183,7 +208,11 @@ const CommandAction cmd_ary[CommandCode::CommandCodeSize] = {
   cmd_set_current_cycle_number,
   cmd_set_reference_period,
   cmd_set_reference_duty_cycle,
-  cmd_set_system_reboot
+  cmd_system_reboot,
+  cmd_start_cycle,
+  cmd_save_storage_config,
+  cmd_load_storage_config,
+  cmd_load_storage_cycle
 };
 
 #endif /* COMMANDS_H_ */

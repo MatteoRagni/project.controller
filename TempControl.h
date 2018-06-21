@@ -147,12 +147,28 @@ class TempControl {
 
     // Alarm Dynamic
     if (abs(alarm_timer) >= TEMPCTRL_LIMIT_TIME_ALARM) {
-      m->state->error |= ErrorMessage::TempControlErr;
+      m->state->error = ErrorMessage::TempControlErr;
       m->alarm(m);
       return;
     }
     exec();
   };
+
+  /** \brief Enables the temperature control. Is a placeholder
+   * 
+   * For the temeprature control this function is actually a placeholder;
+   */
+  void enable() {  }
+
+  /** \brief Disables and cuts-off the temeprature output
+   * 
+   * This function must run when we want to cut off the temperature system
+   * by putting both the pin to low.
+   */
+  void disable() {
+    digitalWrite(TEMPCTRL_CHILLER_PIN, LOW);
+    digitalWrite(TEMPCTRL_RESISTANCE_PIN, LOW);
+  }
 
   /** \brief The alarm function puts the controller in an unrecoverable clean state
    * 
@@ -178,7 +194,7 @@ class TempControl {
       int read = analogRead(TEMPCTRL_TEMPSENSOR_PIN);
     #endif
     if (read == 0) {
-      m->state->error |= ErrorMessage::TempSensor;
+      m->state->error = ErrorMessage::TempSensor;
       m->alarm(m);
     }
     float x = float(read);

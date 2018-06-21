@@ -59,8 +59,6 @@
  *     y = s y1 + (1 - s) y0
  *
  * But to make things faster, some evaluations will be simplified.
- *
- * TODO: Insert cycle count logic in the square wave generator!
  */
 class SquareWaveGenerator {
   float t;   /**< Internal timer for the system */
@@ -70,6 +68,7 @@ class SquareWaveGenerator {
   float *y0; /**< pointer to the lower value for the output */
   float *y1; /**< pointer to the upper value for the output */
   float *y_set; /**< pointer to set point */
+  unsigned long *cycle; /**< Pointer to the cycle counter (for updating) */
 
   const float delta_t = float(LOOP_TIMING) / 1000.0; /**< Timing for the integrator */
 
@@ -82,9 +81,10 @@ class SquareWaveGenerator {
    * \param duty_cycle pointer to the duty cycle value
    * \param _y0 pointer to the lower value for the output
    * \param _y1 pointer to the upper value for the output
+   * \param _cycle pointer to the cycle value fr updating
    */
-  SquareWaveGenerator(float *period, float *duty_cycle, float *_y0, float *_y1, float *_y_set)
-      : t(0), s(0), T(period), dc(duty_cycle), y0(_y0), y1(_y1), y_set(_y_set) {};
+  SquareWaveGenerator(float *period, float *duty_cycle, float *_y0, float *_y1, float *_y_set, unsigned long *_cycle)
+      : t(0), s(0), T(period), dc(duty_cycle), y0(_y0), y1(_y1), y_set(_y_set), cycle(_cycle) {};
 
   /** \brief Evaluates the new value for the reference
    *
@@ -100,6 +100,7 @@ class SquareWaveGenerator {
     if ((t >= (*T)) && (s == 1)) {
       s = 0;
       t = 0;
+      (*cycle) += 1; // Increment cycle number 
     }
 
     (*y_set) = (s ? (*y1) : (*y0));
@@ -366,7 +367,7 @@ class PresControl {
    * \param m a pointer to the MachineState struct that contains all the elements.
    */
   PresControl(MachineState *_m) : m(_m) {
-    ref = new SquareWaveGenerator(&(m->state->period), &(m->state->duty_cycle), &(m->p_high), &(m->p_low), &(m->state->p_set));
+    ref = new SquareWaveGenerator(&(m->state->period), &(m->state->duty_cycle), &(m->p_high), &(m->p_low), &(m->state->p_set), &(m->state->cycle));
     al_ctrl = new ControllerAlarm(&(m->state->p_meas), &(m->state->p_set));
     al_acc = new AccumulatorAlarm(&(m->state->p_meas), &(m->state->q_meas));
     ctrl = new PIController(&(m->state->kp), &(m->state->ki), &(m->state->p_meas), &(m->state->p_set));
@@ -417,18 +418,24 @@ class PresControl {
    * and sends it to the actuator.
    */
   void run() {
+    // First off: Let's check that we have not reached the maximum cycles...
+    if (m->state->cycle == m->state->max_cycle) {
+      m->state->error = ErrorMessage::CycleLimit;
+      m->alarm(m);
+    }
+
     // Measuring sensors:
     m->state->p_meas = mov_avg_act * read_p_sensor() + (1 - mov_avg_act) * m->state->p_meas;
     m->state->q_meas = mov_avg_acc * read_q_sensor() + (1 - mov_avg_acc) * m->state->q_meas;
 
     // Evaluating error conditions:
     if (al_ctrl->check_alarm()) {
-      m->state->error |= ErrorMessage::PresControlErr;
-      //m->alarm(m);
+      m->state->error = ErrorMessage::PresControlErr;
+      m->alarm(m);
     }
     if (al_acc->check_alarm()) {
-      m->state->error |= ErrorMessage::PresAccumulatorErr;
-      //m->alarm(m);
+      m->state->error = ErrorMessage::PresAccumulatorErr;
+      m->alarm(m);
     }
 
     // Evaluating PID Control Action
@@ -466,7 +473,7 @@ class PresControl {
       int read = analogRead(PRESCTRL_PACTUATOR_SENSOR_PIN);
     #endif
     if (read == 0) {
-      m->state->error |= ErrorMessage::PActuatorSensor;
+      m->state->error = ErrorMessage::PActuatorSensor;
       m->alarm(m);
     }
     float x = float(read);
@@ -481,7 +488,7 @@ class PresControl {
       int read = analogRead(PRESCTRL_PACCUMULATOR_SENSOR_PIN);
     #endif
     if (read == 0) {
-      m->state->error |= ErrorMessage::PAccumulatorSensor;
+      m->state->error = ErrorMessage::PAccumulatorSensor;
       m->alarm(m);
     }
     float x = float(read);

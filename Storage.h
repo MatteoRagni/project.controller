@@ -63,21 +63,22 @@ class Storage {
   int cycle_addr; /**< Cycle number EEPROM address */
   storage_s config; /**< The configuration buffer struct */
   unsigned long current_cycle; /**< The current cycle number buffer */
+  MachineState * m;
 
   public:
   /** \brief Class constructor initializes the address
    * 
    * The address are automatically evaluated.
-   * \param m pointer to the machine state
+   * \param _m pointer to the machine state
    */ 
-  Storage(MachineState *m) {
+  Storage(MachineState * _m) : m(_m) {
     config_addr = STORAGE_REF_ADDRESS;
     cycle_addr = config_addr + sizeof(storage_s);
   };
 
   /** \brief Load configuration from memory */
   void load_config() {
-    EEPROM.get(config_addr, storage_s);
+    EEPROM.get(config_addr, config);
     m->state->max_cycle = config.max_cycle;
     m->state->kp = config.kp;
     m->state->ki = config.ki;
@@ -110,8 +111,14 @@ class Storage {
   /** \brief Save cycle number in configuration */
   void save_cycle() {
     current_cycle = m->state->cycle;
-    EEPROM.pun(cycle_addr, current_cycle);
+    EEPROM.put(cycle_addr, current_cycle);
   };
+
+  /** \brief Check if it has to save the cycles, depending on frequency */
+  void run() {
+    if (m->state->cycle % STORAGE_FREQUENCY == 0)
+      save_cycle();
+  }
 };
 
 #endif
