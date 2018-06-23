@@ -126,7 +126,7 @@ class SerialParser {
         r = SERIAL_PORT.read();
       }
     }
-    m->state->state = StateCode::Waiting;
+    m->state->state = StateCode::Pause;
   };
 
   /** \brief Receives one char at the time, executes when a full command is receive
@@ -182,7 +182,7 @@ class SerialParser {
    */
   void send() {
     output.s.check = lcr_check((const char*)output.b, (size_t)output_size);
-    SERIAL_PORT.print(output.b);
+    SERIAL_PORT.write(output.b, output_buffer_size);
     SERIAL_PORT.flush();
   }
 
