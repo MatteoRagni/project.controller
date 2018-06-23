@@ -148,10 +148,13 @@ void loop() {
     switch (m.state->state) {
       case (StateCode::Alarm):
         alarm_loop();
+        break;
       case (StateCode::Pause):
         pause_loop();
+        break;
       case (StateCode::Running):
         running_loop();
+        break;
     };
   }
 }
