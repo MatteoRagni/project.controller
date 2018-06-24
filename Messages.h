@@ -1,7 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * Copyright (c) 2018, Matteo Ragni
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  * 1. Redistributions of source code must retain the above copyright
@@ -44,31 +44,31 @@ typedef struct FORCE_PACKED input_s {
   char check;
 } input_s;
 
-#define input_size         (sizeof(input_s) - sizeof(char))
-#define input_buffer_size  sizeof(input_s)
+#define input_size (sizeof(input_s) - sizeof(char))
+#define input_buffer_size sizeof(input_s)
 
 /** Output Message Protocol */
 
 typedef struct FORCE_PACKED output_s {
-  float t_meas; /**< Temeprature measurements */
-  float p_meas; /**< Actuator Pressure measurements */
-  float q_meas; /**< Accumulator pressure measurements */
-  float kp; /**< Pressure proportional gain */
-  float ki; /**< Pressure Integral gain */
-  float t_set; /**< Temeprature set point */
-  float p_set; /**< Pressure set point for actuator */
-  float u_pres; /**< Current output for pressure control */
-  float period; /**< Square wave generator period */
+  float t_meas;     /**< Temeprature measurements */
+  float p_meas;     /**< Actuator Pressure measurements */
+  float q_meas;     /**< Accumulator pressure measurements */
+  float kp;         /**< Pressure proportional gain */
+  float ki;         /**< Pressure Integral gain */
+  float t_set;      /**< Temeprature set point */
+  float p_set;      /**< Pressure set point for actuator */
+  float u_pres;     /**< Current output for pressure control */
+  float period;     /**< Square wave generator period */
   float duty_cycle; /**< Duty cycle coefficient */
-  unsigned long cycle; /**< Cycles number */
-  unsigned long max_cycle; /**< Max cycles Number */
-  char config; /**< Actuators configuration */
-  char state;  /**< Current state flag */
-  char error;  /**< Last error flag */
-  char check; /**< Communication checksum (accumulated xor) */
+  float cycle;      /**< Cycles number */
+  float max_cycle;  /**< Max cycles Number */
+  char config;      /**< Actuators configuration */
+  char state;       /**< Current state flag */
+  char error;       /**< Last error flag */
+  char check;       /**< Communication checksum (accumulated xor) */
 } output_s;
 
-#define output_size         (sizeof(output_s) - sizeof(char))
-#define output_buffer_size  sizeof(output_s)
+#define output_size (sizeof(output_s) - sizeof(char))
+#define output_buffer_size sizeof(output_s)
 
 #endif /* MESSAGES_H_ */

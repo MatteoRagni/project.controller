@@ -43,11 +43,7 @@ class Storage;
 typedef struct MachineState MachineState;
 typedef void (*alarm_handler)(MachineState* m);
 
-typedef enum ControlEnabler {
-  Chiller = 0x1,
-  Resistance = 0x2,
-  PActuator = 0x4
-} ControlEnabler;
+typedef enum ControlEnabler { Chiller = 0x1, Resistance = 0x2, PActuator = 0x4 } ControlEnabler;
 
 typedef enum ErrorMessage {
   NoError = 0x0,
@@ -63,24 +59,20 @@ typedef enum ErrorMessage {
   SerialStop = 0xA
 } ErrorMessage;
 
-typedef enum StateCode {
-  Alarm = 0x1,
-  Pause = 0x2,
-  Running = 0x4,
-  Waiting = 0x8,
-  SerialSetup = 0xA
-} StateCode;
+typedef enum StateCode { Alarm = 0x1, Pause = 0x2, Running = 0x4, Waiting = 0x8, SerialSetup = 0xA } StateCode;
 
 struct MachineState {
-  output_s* state;
-  input_s* command;
-  alarm_handler alarm;
-  float p_high;
-  float p_low;
-  SerialParser * serial;
-  TempControl * tempctrl;
-  PresControl * presctrl;
-  Storage * storage;
+  output_s* state;         /**< Current output_s that will be sent on request */
+  input_s* command;        /**< Last received command to execute */
+  alarm_handler alarm;     /**< Callback to the alarm function */
+  float p_high;            /**< High level pressure, this is not on output communication */
+  float p_low;             /**< Low level pressure, this is not on output communication */
+  unsigned long cycle;     /**< Current cycle number, it is not in output for endianess reason */
+  unsigned long max_cycle; /**< Maximum cycle number, it is not in output for endianess reason */
+  SerialParser* serial;    /**< Pointer to the serial parser */
+  TempControl* tempctrl;   /**< Pointer to the temperature control */
+  PresControl* presctrl;   /**< Pointer to the pressure control */
+  Storage* storage;        /**< Pointer to the Storage controller */
 };
 
 #endif /* MACHINE_H_ */

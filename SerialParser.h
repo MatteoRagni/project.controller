@@ -31,8 +31,8 @@
 #define SERIAL_PARSER_H_
 
 #include "Config.h"
-#include "Messages.h"
 #include "Machine.h"
+#include "Messages.h"
 
 typedef union input_u {
   input_s s;
@@ -63,7 +63,7 @@ typedef unsigned int size_t; /**< Type definition for size_t as index in arrays 
  */
 class SerialParser {
  private:
-   MachineState * m; /**< Machine state pointer for some operations */
+  MachineState* m; /**< Machine state pointer for some operations */
   input_u input;   /**< Input data holder */
   output_u output; /**< Output data holder */
 
@@ -81,11 +81,11 @@ class SerialParser {
    * to zero just to be sure (we don't really know what the Arduino compiler does);
    * The state structure is initialized to some default value, and check is made
    * consistent.
-   * The constructor also connects the machine state and the input struct in order 
+   * The constructor also connects the machine state and the input struct in order
    * to eliminate the need of a copy operation.
    * \param _m a pointer to the MachineState
    */
-  SerialParser(MachineState * _m) : m(_m), idx(0), data_ready(false), error(false) {
+  SerialParser(MachineState* _m) : m(_m), idx(0), data_ready(false), error(false) {
     m->state = &(output.s);
     m->command = &(input.s);
 
@@ -104,7 +104,9 @@ class SerialParser {
     output.s.period = DEFAULT_PERIOD;
     output.s.duty_cycle = DEFAULT_DUTY_CYCLE;
     output.s.cycle = DEFAULT_CYCLE;
+    m->cycle = DEFAULT_CYCLE;
     output.s.max_cycle = DEFAULT_MAX_CYCLE;
+    m->max_cycle = DEFAULT_MAX_CYCLE;
     output.s.config = DEFAULT_CONFIG;
     output.s.state = DEFAULT_STATE;
     output.s.check = lcr_check((const char*)output.b, (size_t)output_size);
@@ -171,16 +173,18 @@ class SerialParser {
    * Sends on the serial the output structure. The ouptut structure should be less than 64byte
    * to be sure not to full the output buffer of the Arduino. Longer structure can be used
    * but for sure the operation timing will depend on the length of the structure itself.
-   * 
+   *
    * The operation is made as blocking in order to avoid chenge in the output structure
    * while writing data to serial.
-   * 
+   *
    * FIXME: Here I'm doing a blocking operation. It is performed only if requested via serial
    * thus it is stil safe, but if the serial disconnects while sending with flush blocking
    * everything, then I may have some problem. With enough timer one should define a timer
    * for maximum transmission time and raise an alert if the threshold time is reached.
    */
   void send() {
+    output.s.max_cycle = float(m->max_cycle);
+    output.s.cycle = float(m->cycle);
     output.s.check = lcr_check((const char*)output.b, (size_t)output_size);
     SERIAL_PORT.write(output.b, output_buffer_size);
     SERIAL_PORT.flush();

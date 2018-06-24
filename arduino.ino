@@ -27,13 +27,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 #include "Config.h"
 #include "Machine.h"
-#include "SerialParser.h"
-#include "TempControl.h"
 #include "PresControl.h"
+#include "SerialParser.h"
 #include "Storage.h"
+#include "TempControl.h"
 #include "Commands.h"
+
+// Software in the loop simulation
+#ifdef SIL_SIM
+#include "SIL.h"
+#endif
 
 // Globals
 unsigned long tic, toc;
@@ -41,7 +47,7 @@ unsigned long tic, toc;
 volatile MachineState m;
 
 /** \brief Alarm Function: Called when system goes in alarm state
- * 
+ *
  * This function is stored in the MachineState and it is called by
  * the various modules when an alarm is raised. It calls a clean condition
  * for each modulus (each modulus has its own alarm function) and then
@@ -52,22 +58,22 @@ void alarm_fnc(MachineState* m) {
   m->presctrl->alarm();
   m->tempctrl->alarm();
   m->state->state = StateCode::Alarm;
-  while (1) { loop(); } // Re-enters in the loop immediately
+  while (1) {
+    loop();
+  }  // Re-enters in the loop immediately
 }
 
 /** \brief Emergency button Interrupt routine
- * 
+ *
  * FIXME: I don't have a better strategy for this. The problem is that we are actually
  * entering an interrupt service routine and we never exit from it. I'm not sure it
  * works well, but we go in any way in a safe state. Probably a manual reboot is
  * required after this and it is not a problem.
  */
-void emergency_button_isr() {
-  m.alarm(&m);
-}
+void emergency_button_isr() { m.alarm(&m); }
 
 /** \brief State Machine Running loop
- * 
+ *
  * Normal mode operation.
  */
 void running_loop() {
@@ -90,7 +96,7 @@ void running_loop() {
 void pause_loop() {
   m.presctrl->disable();
   m.tempctrl->disable();
-  
+
   m.serial->receive();
   if (m.serial->is_ready()) {
     // Here we can execute all the commands
@@ -114,11 +120,11 @@ void alarm_loop() {
   }
 }
 
-//  ___      _             
-// / __| ___| |_ _  _ _ __ 
+//  ___      _
+// / __| ___| |_ _  _ _ __
 // \__ \/ -_)  _| || | '_ \
 // |___/\___|\__|\_,_| .__/
-//                   |_| 
+//                   |_|
 void setup() {
   attachInterrupt(EMERGENCYBTN_PIN, emergency_button_isr, EMERGENCYBTN_MODE);
   // The first initialization shall aways be the serial parser
@@ -131,20 +137,23 @@ void setup() {
   m.alarm = alarm_fnc;
   m.p_low = DEFAULT_P_LOW;
   m.p_high = DEFAULT_P_HIGH;
-  
+
   m.serial->begin();
   tic = millis();
   toc = tic;
 }
 
-//  _                  
-// | |   ___  ___ _ __ 
+//  _
+// | |   ___  ___ _ __
 // | |__/ _ \/ _ \ '_ \
 // |____\___/\___/ .__/
-//               |_|   
+//               |_|
 void loop() {
   toc = millis();
   if (((unsigned long)(toc - tic)) >= LOOP_TIMING) {
+    #ifdef SIL_SIM
+      sil_sim.run();
+    #endif
     switch (m.state->state) {
       case (StateCode::Alarm):
         alarm_loop();

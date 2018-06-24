@@ -36,7 +36,7 @@
 #include "Machine.h"
 
 /** \brief Data to store in the EEPROM
- * 
+ *
  * We store a complete set of data from the EEPROM that may
  * be useful to restore a test.
  */
@@ -52,26 +52,25 @@ typedef struct storage_s {
 } storage_s;
 
 /** \brief The storage class handles read write from the EEPROM
- * 
+ *
  * The class saves and restores some configuration in the state of the
  * machine. The idea is to store and restore only upon user request.
  * The configuration saved are in \p storage_s.
  */
 class Storage {
-
-  int config_addr; /**< Configuration EEPROM address */
-  int cycle_addr; /**< Cycle number EEPROM address */
-  storage_s config; /**< The configuration buffer struct */
+  int config_addr;             /**< Configuration EEPROM address */
+  int cycle_addr;              /**< Cycle number EEPROM address */
+  storage_s config;            /**< The configuration buffer struct */
   unsigned long current_cycle; /**< The current cycle number buffer */
-  MachineState * m;
+  MachineState* m;
 
-  public:
+ public:
   /** \brief Class constructor initializes the address
-   * 
+   *
    * The address are automatically evaluated.
    * \param _m pointer to the machine state
-   */ 
-  Storage(MachineState * _m) : m(_m) {
+   */
+  Storage(MachineState* _m) : m(_m) {
     config_addr = STORAGE_REF_ADDRESS;
     cycle_addr = config_addr + sizeof(storage_s);
   };
@@ -79,7 +78,7 @@ class Storage {
   /** \brief Load configuration from memory */
   void load_config() {
     EEPROM.get(config_addr, config);
-    m->state->max_cycle = config.max_cycle;
+    m->max_cycle = config.max_cycle;
     m->state->kp = config.kp;
     m->state->ki = config.ki;
     m->state->period = config.period;
@@ -92,12 +91,12 @@ class Storage {
   /** \brief Load cycle number from the memory */
   void load_cycle() {
     EEPROM.get(cycle_addr, current_cycle);
-    m->state->cycle = current_cycle;
+    m->cycle = current_cycle;
   };
 
   /** \brief Save configuration in memory */
   void save_config() {
-    config.max_cycle = m->state->max_cycle;
+    config.max_cycle = m->max_cycle;
     config.kp = m->state->kp;
     config.ki = m->state->ki;
     config.period = m->state->period;
@@ -110,13 +109,13 @@ class Storage {
 
   /** \brief Save cycle number in configuration */
   void save_cycle() {
-    current_cycle = m->state->cycle;
+    current_cycle = m->cycle;
     EEPROM.put(cycle_addr, current_cycle);
   };
 
   /** \brief Check if it has to save the cycles, depending on frequency */
   void run() {
-    if (m->state->cycle % STORAGE_FREQUENCY == 0)
+    if (m->cycle % STORAGE_FREQUENCY == 0)
       save_cycle();
   }
 };

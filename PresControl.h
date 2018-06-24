@@ -61,13 +61,13 @@
  * But to make things faster, some evaluations will be simplified.
  */
 class SquareWaveGenerator {
-  float t;   /**< Internal timer for the system */
-  char s;    /**< Internal logic state for the system */
-  float *T;  /**< pointer to the period value */
-  float *dc; /**< pointer to the duty cycle value */
-  float *y0; /**< pointer to the lower value for the output */
-  float *y1; /**< pointer to the upper value for the output */
-  float *y_set; /**< pointer to set point */
+  float t;              /**< Internal timer for the system */
+  char s;               /**< Internal logic state for the system */
+  float *T;             /**< pointer to the period value */
+  float *dc;            /**< pointer to the duty cycle value */
+  float *y0;            /**< pointer to the lower value for the output */
+  float *y1;            /**< pointer to the upper value for the output */
+  float *y_set;         /**< pointer to set point */
   unsigned long *cycle; /**< Pointer to the cycle counter (for updating) */
 
   const float delta_t = float(LOOP_TIMING) / 1000.0; /**< Timing for the integrator */
@@ -84,7 +84,7 @@ class SquareWaveGenerator {
    * \param _cycle pointer to the cycle value fr updating
    */
   SquareWaveGenerator(float *period, float *duty_cycle, float *_y0, float *_y1, float *_y_set, unsigned long *_cycle)
-      : t(0), s(0), T(period), dc(duty_cycle), y0(_y0), y1(_y1), y_set(_y_set), cycle(_cycle) {};
+      : t(0), s(0), T(period), dc(duty_cycle), y0(_y0), y1(_y1), y_set(_y_set), cycle(_cycle){};
 
   /** \brief Evaluates the new value for the reference
    *
@@ -100,7 +100,7 @@ class SquareWaveGenerator {
     if ((t >= (*T)) && (s == 1)) {
       s = 0;
       t = 0;
-      (*cycle) += 1; // Increment cycle number 
+      (*cycle) += 1;  // Increment cycle number
     }
 
     (*y_set) = (s ? (*y1) : (*y0));
@@ -351,12 +351,13 @@ class PresControl {
   AccumulatorAlarm *al_acc; /**< Accumulator alarm structure pointer */
   PIController *ctrl;       /**< PI controller structure pointer */
 
-  const float sens_act_m = float(PRESCTRL_SENSOR_ACTUATOR_M); /**< Calibration  for the actuator sensor */
-  const float sens_act_q = float(PRESCTRL_SENSOR_ACTUATOR_Q); /**< Offset for the actuator sensor */
+  const float sens_act_m = float(PRESCTRL_SENSOR_ACTUATOR_M);    /**< Calibration  for the actuator sensor */
+  const float sens_act_q = float(PRESCTRL_SENSOR_ACTUATOR_Q);    /**< Offset for the actuator sensor */
   const float sens_acc_m = float(PRESCTRL_SENSOR_ACCUMULATOR_M); /**< Calibration for the accumulator sensor */
   const float sens_acc_q = float(PRESCTRL_SENSOR_ACCUMULATOR_Q); /**< Offset for the accumulator sensor */
-  const float mov_avg_act = float(PRESCTRL_MOVAVG_ACTUATOR); /**< Moving average coefficient for actuator measure */
-  const float mov_avg_acc = float(PRESCTRL_MOVAVG_ACCUMULATOR); /**< Moving average coefficient for accumulator measure */
+  const float mov_avg_act = float(PRESCTRL_MOVAVG_ACTUATOR);     /**< Moving average coefficient for actuator measure */
+  const float mov_avg_acc =
+      float(PRESCTRL_MOVAVG_ACCUMULATOR); /**< Moving average coefficient for accumulator measure */
 
  public:
   /** \brief Constructor for the pressure control. Must run in Setup!
@@ -367,7 +368,8 @@ class PresControl {
    * \param m a pointer to the MachineState struct that contains all the elements.
    */
   PresControl(MachineState *_m) : m(_m) {
-    ref = new SquareWaveGenerator(&(m->state->period), &(m->state->duty_cycle), &(m->p_high), &(m->p_low), &(m->state->p_set), &(m->state->cycle));
+    ref = new SquareWaveGenerator(&(m->state->period), &(m->state->duty_cycle), &(m->p_high), &(m->p_low),
+                                  &(m->state->p_set), &(m->cycle));
     al_ctrl = new ControllerAlarm(&(m->state->p_meas), &(m->state->p_set));
     al_acc = new AccumulatorAlarm(&(m->state->p_meas), &(m->state->q_meas));
     ctrl = new PIController(&(m->state->kp), &(m->state->ki), &(m->state->p_meas), &(m->state->p_set));
@@ -394,15 +396,15 @@ class PresControl {
     x /= n;
     m->state->q_meas = x;
   };
-  
+
   /** \brief Enables output for the actuator
-   * 
+   *
    * This function is mandatory in automatic mode in order to make it run
    */
   void enable() { digitalWrite(PRESCTRL_ENABLE_PRES_CTRL, HIGH); }
 
   /** \brief Disables and cuts-off the actuator output
-   * 
+   *
    * This function must run when we want to cut off the actuator
    */
   void disable() {
@@ -411,15 +413,15 @@ class PresControl {
   }
 
   /** \brief Central control loop for the pressure
-   * 
+   *
    * The function updates all the sensor values using an exponential moving average, then
-   * evaluates if there are conditions for rising an alarm due to incontrollability 
+   * evaluates if there are conditions for rising an alarm due to incontrollability
    * or puntures in the accumulator, checks the new reference value and then evaluates the PI control
    * and sends it to the actuator.
    */
   void run() {
     // First off: Let's check that we have not reached the maximum cycles...
-    if (m->state->cycle == m->state->max_cycle) {
+    if (m->cycle == m->max_cycle) {
       m->state->error = ErrorMessage::CycleLimit;
       m->alarm(m);
     }
@@ -442,19 +444,19 @@ class PresControl {
     ref->reference();
     m->state->u_pres = ctrl->control();
     if (m->state->config & ControlEnabler::PActuator) {
-      #ifdef SIL_SIM
-        sil_sim.write_pressure(m->state->u_pres);
-      #else
-        analogWrite(PRESCTRL_PACT_OUT_PIN, m->state->u_pres);
-      #endif
+#ifdef SIL_SIM
+      sil_sim.write_pressure(m->state->u_pres);
+#else
+      analogWrite(PRESCTRL_PACT_OUT_PIN, m->state->u_pres);
+#endif
     } else {
       disable();
     }
   };
 
   /** \brief The alarm function puts the controller in an unrecoverable clean state
-   * 
-   * This function puts the overall controller in a clean state that can be recovered only through 
+   *
+   * This function puts the overall controller in a clean state that can be recovered only through
    * a reboot of the microcontroller.
    */
   void alarm() {
@@ -467,11 +469,11 @@ class PresControl {
  private:
   /** \brief Routine that reads the actuator sensor input */
   float read_p_sensor() {
-    #ifdef SIL_SIM
-      int read = sil_sim.read_p_act();
-    #else
-      int read = analogRead(PRESCTRL_PACTUATOR_SENSOR_PIN);
-    #endif
+#ifdef SIL_SIM
+    int read = sil_sim.read_p_act();
+#else
+    int read = analogRead(PRESCTRL_PACTUATOR_SENSOR_PIN);
+#endif
     if (read == 0) {
       m->state->error = ErrorMessage::PActuatorSensor;
       m->alarm(m);
@@ -482,11 +484,11 @@ class PresControl {
 
   /** \brief Routine that reads the actuator sensor input */
   float read_q_sensor() {
-    #ifdef SIL_SIM
-      int read = sil_sim.read_p_acc();
-    #else
-      int read = analogRead(PRESCTRL_PACCUMULATOR_SENSOR_PIN);
-    #endif
+#ifdef SIL_SIM
+    int read = sil_sim.read_p_acc();
+#else
+    int read = analogRead(PRESCTRL_PACCUMULATOR_SENSOR_PIN);
+#endif
     if (read == 0) {
       m->state->error = ErrorMessage::PAccumulatorSensor;
       m->alarm(m);

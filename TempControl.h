@@ -112,7 +112,7 @@ class TempControl {
   };
 
   /** \brief Main loop to run the temperature controller
-   * 
+   *
    * The loop evaluates the system introduced in class description and makes the actuation
    * on the output pin if no alarm is raised.
    */
@@ -155,13 +155,13 @@ class TempControl {
   };
 
   /** \brief Enables the temperature control. Is a placeholder
-   * 
+   *
    * For the temeprature control this function is actually a placeholder;
    */
-  void enable() {  }
+  void enable() {}
 
   /** \brief Disables and cuts-off the temeprature output
-   * 
+   *
    * This function must run when we want to cut off the temperature system
    * by putting both the pin to low.
    */
@@ -171,8 +171,8 @@ class TempControl {
   }
 
   /** \brief The alarm function puts the controller in an unrecoverable clean state
-   * 
-   * This function puts the overall controller in a clean state that can be recovered only through 
+   *
+   * This function puts the overall controller in a clean state that can be recovered only through
    * a reboot of the microcontroller.
    */
   void alarm() {
@@ -188,11 +188,11 @@ class TempControl {
  private:
   /** \brief Routine that reads the sensor input */
   float read_sensor() {
-    #ifdef SIL_SIM
-      int read = sil_sim.read_temp();
-    #else
-      int read = analogRead(TEMPCTRL_TEMPSENSOR_PIN);
-    #endif
+#ifdef SIL_SIM
+    int read = sil_sim.read_temp();
+#else
+    int read = analogRead(TEMPCTRL_TEMPSENSOR_PIN);
+#endif
     if (read == 0) {
       m->state->error = ErrorMessage::TempSensor;
       m->alarm(m);
@@ -203,13 +203,13 @@ class TempControl {
 
   /** \brief Sends in output the command */
   void exec() {
-    #ifdef SIL_SIM
-      sil_sim.write_chiller(chiller_state);
-      sil_sim.write_resistance(resistance_state);
-    #else
-      digitalWrite(TEMPCTRL_CHILLER_PIN, chiller_state ? HIGH : LOW);
-      digitalWrite(TEMPCTRL_RESISTANCE_PIN, resistance_state ? HIGH : LOW);
-    #endif
+#ifdef SIL_SIM
+    sil_sim.write_chiller(chiller_state);
+    sil_sim.write_resistance(resistance_state);
+#else
+    digitalWrite(TEMPCTRL_CHILLER_PIN, chiller_state ? HIGH : LOW);
+    digitalWrite(TEMPCTRL_RESISTANCE_PIN, resistance_state ? HIGH : LOW);
+#endif
   };
 };
 

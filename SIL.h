@@ -82,13 +82,12 @@ class SIL {
   void run() {
     sim_temperature();
     sim_pressure();
-
-    Serial.print(t[0]);
-    Serial.print(",");
-    Serial.print(p[0]);
-    Serial.print(",");
-    Serial.println(p[1]);
-    Serial.flush();
+    // Serial.print(t[0]);
+    // Serial.print(",");
+    // Serial.print(p[0]);
+    // Serial.print(",");
+    // Serial.println(p[1]);
+    // Serial.flush();
   };
 
   int read_temp() { return round(map(t[0], 0.0, 120.0, 1.0, 1024.0)); };

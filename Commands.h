@@ -32,12 +32,8 @@
 
 #include <avr/wdt.h>
 #include "Config.h"
-#include "Messages.h"
 #include "Machine.h"
-
-inline float cmd_saturation(float &bottom, float &value, float &top) {
-  return (value >= top ? top : (value <= bottom ? bottom : value));
-}
+#include "Messages.h"
 
 /**
  * The commands are defined in an array of function pointers, all of the same shape.
@@ -47,7 +43,7 @@ inline float cmd_saturation(float &bottom, float &value, float &top) {
  */
 
 typedef enum CommandCode {
-  Hearthbeat,                   /**< Command from the screen: it is alive! */
+  Hearthbeat = 0x00,           /**< Command from the screen: it is alive! */
   ManualTemperatureControl,    /**< Overrides (disabling) the temperature control */
   AutomaticTemperatureControl, /**< Enables the pressure control */
   ManualPressureControl,       /**< Overrides (disabling) the pressure control */
@@ -75,27 +71,23 @@ typedef enum CommandCode {
   CommandCodeSize              /**< This last one is a size for the array of function pointers */
 } CommandCode;
 
-typedef void(*CommandAction)(float value, MachineState *m);
+typedef void (*CommandAction)(float value, MachineState *m);
 
-void cmd_hearthbeat(float value, MachineState *m) {
-  m->serial->send();
-}
+void cmd_hearthbeat(float value, MachineState *m) { m->serial->send(); }
 
 void cmd_manual_temperature_control(float value, MachineState *m) {
-  m->state->config &= ((0xF ^ ControlEnabler::Chiller) | (0xF ^ ControlEnabler::Resistance));
+  m->state->config &= ((0xFF ^ ControlEnabler::Chiller) | (0xFF ^ ControlEnabler::Resistance));
 }
 
 void cmd_automatic_temperature_control(float value, MachineState *m) {
-  m->state->config |= (ControlEnabler::Chiller | ControlEnabler::Resistance); 
+  m->state->config |= (ControlEnabler::Chiller | ControlEnabler::Resistance);
 }
 
 void cmd_manual_pressure_control(float value, MachineState *m) {
-  m->state->config &= (0xF ^ ControlEnabler::PActuator);
+  m->state->config &= (0xFF ^ ControlEnabler::PActuator);
 }
 
-void cmd_automatic_pressure_control(float value, MachineState *m) {
-  m->state->config |= ControlEnabler::PActuator;
-}
+void cmd_automatic_pressure_control(float value, MachineState *m) { m->state->config |= ControlEnabler::PActuator; }
 
 void cmd_toggle_pause_cycle(float value, MachineState *m) {
   if (m->state->state == StateCode::Pause) {
@@ -110,13 +102,9 @@ void cmd_emergency_stop_cycle(float value, MachineState *m) {
   m->alarm(m);
 }
 
-void cmd_toggle_chiller_actuation(float value, MachineState *m) {
-  m->state->config ^= ControlEnabler::Chiller;
-}
+void cmd_toggle_chiller_actuation(float value, MachineState *m) { m->state->config ^= ControlEnabler::Chiller; }
 
-void cmd_toggle_resistance_actuation(float value, MachineState *m) {
-  m->state->config ^= ControlEnabler::Resistance;
-}
+void cmd_toggle_resistance_actuation(float value, MachineState *m) { m->state->config ^= ControlEnabler::Resistance; }
 
 void cmd_set_temperature(float value, MachineState *m) {
   m->state->t_set = constrain(value, SERIAL_PARSER_TEMP_MIN, SERIAL_PARSER_TEMP_MAX);
@@ -147,72 +135,61 @@ void cmd_set_PI_integral_gain(float value, MachineState *m) {
 }
 
 void cmd_set_maximum_cycle_number(float value, MachineState *m) {
-  m->state->max_cycle = (unsigned long)(constrain(value, 0, 1e12));
+  m->max_cycle = (unsigned long)(constrain(value, 0, 1e12));
 }
 
 void cmd_set_current_cycle_number(float value, MachineState *m) {
-  m->state->cycle = (unsigned long)(constrain(value, 0, 1e12));
+  m->cycle = (unsigned long)(constrain(value, 0, 1e12));
 }
 
 void cmd_set_reference_period(float value, MachineState *m) {
   m->state->period = constrain(value, SERIAL_PARSER_PERIOD_MIN, SERIAL_PARSER_PERIOD_MAX);
 }
 
-void cmd_set_reference_duty_cycle(float value, MachineState *m) {
-  m->state->duty_cycle = constrain(value, 0.0, 1.0);
-}
+void cmd_set_reference_duty_cycle(float value, MachineState *m) { m->state->duty_cycle = constrain(value, 0.0, 1.0); }
 
 void cmd_system_reboot(float value, MachineState *m) {
   m->tempctrl->disable();
-  m->tempctrl->disable();
+  m->presctrl->disable();
 
   wdt_enable(WDTO_30MS);
-  while (1) {};
-} 
-
-void cmd_start_cycle(float value, MachineState *m) {
-  m->state->state = StateCode::Running;
+  while (1) {
+  };
 }
 
-void cmd_save_storage_config(float value, MachineState *m) {
-  m->storage->save_config();
-}
+void cmd_start_cycle(float value, MachineState *m) { m->state->state = StateCode::Running; }
 
-void cmd_load_storage_config(float value, MachineState *m) {
-  m->storage->load_config();
-}
+void cmd_save_storage_config(float value, MachineState *m) { m->storage->save_config(); }
 
-void cmd_load_storage_cycle(float value, MachineState *m) {
-  m->storage->load_cycle();
-}
+void cmd_load_storage_config(float value, MachineState *m) { m->storage->load_config(); }
+
+void cmd_load_storage_cycle(float value, MachineState *m) { m->storage->load_cycle(); }
 
 // TODO: The order of the function pointers MATTERS!
-const CommandAction cmd_ary[CommandCode::CommandCodeSize] = {
-  cmd_hearthbeat,
-  cmd_manual_temperature_control,
-  cmd_automatic_temperature_control,
-  cmd_manual_pressure_control,
-  cmd_automatic_pressure_control,
-  cmd_toggle_pause_cycle,
-  cmd_emergency_stop_cycle,
-  cmd_toggle_chiller_actuation,
-  cmd_toggle_resistance_actuation,
-  cmd_set_temperature,
-  cmd_set_pressure_high,
-  cmd_set_pressure_low,
-  cmd_set_pressure,
-  cmd_set_override_PI_control,
-  cmd_set_PI_proportional_gain,
-  cmd_set_PI_integral_gain,
-  cmd_set_maximum_cycle_number,
-  cmd_set_current_cycle_number,
-  cmd_set_reference_period,
-  cmd_set_reference_duty_cycle,
-  cmd_system_reboot,
-  cmd_start_cycle,
-  cmd_save_storage_config,
-  cmd_load_storage_config,
-  cmd_load_storage_cycle
-};
+const CommandAction cmd_ary[CommandCode::CommandCodeSize] = {cmd_hearthbeat,
+                                                             cmd_manual_temperature_control,
+                                                             cmd_automatic_temperature_control,
+                                                             cmd_manual_pressure_control,
+                                                             cmd_automatic_pressure_control,
+                                                             cmd_toggle_pause_cycle,
+                                                             cmd_emergency_stop_cycle,
+                                                             cmd_toggle_chiller_actuation,
+                                                             cmd_toggle_resistance_actuation,
+                                                             cmd_set_temperature,
+                                                             cmd_set_pressure_high,
+                                                             cmd_set_pressure_low,
+                                                             cmd_set_pressure,
+                                                             cmd_set_override_PI_control,
+                                                             cmd_set_PI_proportional_gain,
+                                                             cmd_set_PI_integral_gain,
+                                                             cmd_set_maximum_cycle_number,
+                                                             cmd_set_current_cycle_number,
+                                                             cmd_set_reference_period,
+                                                             cmd_set_reference_duty_cycle,
+                                                             cmd_system_reboot,
+                                                             cmd_start_cycle,
+                                                             cmd_save_storage_config,
+                                                             cmd_load_storage_config,
+                                                             cmd_load_storage_cycle};
 
 #endif /* COMMANDS_H_ */
