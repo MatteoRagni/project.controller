@@ -117,6 +117,8 @@ void alarm_loop() {
     // ... or saving current configuration in EEPROM
     if (m.command->command == CommandCode::SaveStorageConfig)
       cmd_save_storage_config(m.command->value, &m);
+    if (m.command->command == CommandCode::Hearthbeat)
+      cmd_hearthbeat(m.command->value, &m);
   }
 }
 
