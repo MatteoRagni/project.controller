@@ -14,6 +14,17 @@ The firmware is composed by several systems that cooperates in order to control 
 The main `setup` and `loop` operates on a state machine, and are in the file `arduino.ino`, the core file to be compiled and uploaded
 to the controller board. The static configuration and defaults are defined in `Config.h`.
 
+## Emergency Button
+
+It is possible to connect an emergency button to the controller. When the button is pressed an interrupt that puts the controller
+in the alarm state is called.
+
+The settings for the emergency button are:
+
+ * `EMERGENCYBTN_PIN`: Pin for emergency button, must have Interrupt capabilities
+ * `EMERGENCYBTN_MODE`: Default mode for emergency button signal: valid are RISING, LOW, CHANGE, FALLING. 
+    Check on Arduino attachInterrupt documentation
+
 ## Pressure Controller
 
 The pressure control is a PI controller that requires a reference generator
