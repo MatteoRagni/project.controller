@@ -78,6 +78,12 @@ class SIL {
   };
 
  public:
+  bool temp_sens_fault = false;
+  bool pres_act_sens_fault = false;
+  bool pres_acc_sens_fault = false;
+  bool pres_act_fault = false;
+  bool temp_act_fault = false;
+
   SIL(){};
   void run() {
     sim_temperature();
@@ -97,8 +103,30 @@ class SIL {
   void write_chiller(bool c) { u_chil = (c ? 1.0 : 0.0); };
   void write_resistance(bool c) { u_res = (c ? 1.0 : 0.0); };
   void write_pressure(float c) { u_pres = constrain(c, 0.0, 1024.0); };
+
+
 };
 
 SIL sil_sim;
+
+void cmd_faulty_temperature_sens(float value) {
+  sil_sim.temp_sens_fault = true; 
+}
+
+void cmd_faulty_pres_act_sens(float value) {
+  sil_sim.pres_act_sens_fault = true;
+}
+
+void cmd_faulty_pres_acc_sens(float value) {
+  sil_sim.pres_acc_sens_fault = true;
+}
+
+void cdm_faulty_pres_actuator(float value) {
+  sil_sim.pres_act_fault = true;
+}
+
+void cdm_faulty_temp_actuator(float value) {
+  sil_sim.temp_act_fault = true;
+}
 
 #endif

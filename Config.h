@@ -30,7 +30,7 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
-// #define SIL_SIM /**< Enables the Software in the loop simulator for debugging */
+//#define SIL_SIM /**< Enables the Software in the loop simulator for debugging */
 
 // TODO Check all the default values!
 

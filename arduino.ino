@@ -34,12 +34,11 @@
 #include "SerialParser.h"
 #include "Storage.h"
 #include "TempControl.h"
-#include "Commands.h"
-
 // Software in the loop simulation
 #ifdef SIL_SIM
 #include "SIL.h"
 #endif
+#include "Commands.h"
 
 // Globals
 unsigned long tic, toc;
@@ -83,42 +82,36 @@ void running_loop() {
   m.presctrl->run();
   m.tempctrl->run();
   m.storage->run();
-
-  m.serial->receive();
-
-  if (m.serial->is_ready()) {
-    // Here we can execute all the commands
-    if (m.command->command < CommandCode::CommandCodeSize)
-      cmd_ary[m.command->command](m.command->value, &m);
-  }
 }
 
 void pause_loop() {
   m.presctrl->disable();
   m.tempctrl->disable();
-
-  m.serial->receive();
-  if (m.serial->is_ready()) {
-    // Here we can execute all the commands
-    if (m.command->command < CommandCode::CommandCodeSize)
-      cmd_ary[m.command->command](m.command->value, &m);
-  }
 }
 
 void alarm_loop() {
   m.presctrl->disable();
   m.tempctrl->disable();
+}
 
+void serial_loop() {
   m.serial->receive();
   if (m.serial->is_ready()) {
-    // The only command we accept in serial on alarm is a reboot
-    if (m.command->command == CommandCode::SystemReboot)
-      cmd_system_reboot(m.command->value, &m);
-    // ... or saving current configuration in EEPROM
-    if (m.command->command == CommandCode::SaveStorageConfig)
-      cmd_save_storage_config(m.command->value, &m);
-    if (m.command->command == CommandCode::Hearthbeat)
-      cmd_hearthbeat(m.command->value, &m);
+    if (m.state->state == StateCode::Alarm) {
+      // The only command we accept in serial on alarm is a reboot
+      if (m.command->command == CommandCode::SystemReboot)
+        cmd_system_reboot(m.command->value, &m);
+      // ... or saving current configuration in EEPROM
+      if (m.command->command == CommandCode::SaveStorageConfig)
+        cmd_save_storage_config(m.command->value, &m);
+      if (m.command->command == CommandCode::Hearthbeat)
+        cmd_hearthbeat(m.command->value, &m);
+    }
+    else {
+      // Here we can execute all the commands
+      if (m.command->command < CommandCode::CommandCodeSize)
+        cmd_ary[m.command->command](m.command->value, &m);
+    }
   }
 }
 
@@ -153,9 +146,9 @@ void setup() {
 void loop() {
   toc = millis();
   if (((unsigned long)(toc - tic)) >= LOOP_TIMING) {
-    #ifdef SIL_SIM
-      sil_sim.run();
-    #endif
+#ifdef SIL_SIM
+    sil_sim.run();
+#endif
     switch (m.state->state) {
       case (StateCode::Alarm):
         alarm_loop();
@@ -167,5 +160,7 @@ void loop() {
         running_loop();
         break;
     };
+    serial_loop();
+    tic = toc;
   }
 }

@@ -148,7 +148,7 @@ class SerialParser {
    * Received data is expected to be little-endian.
    */
   void receive() {
-    while (SERIAL_PORT.available()) {
+    while (SERIAL_PORT.available() && !data_ready) {
       input_buf[idx++] = SERIAL_PORT.read();
       if (idx >= input_buffer_size) {
         char r_idx = lcr_check((const char*)input_buf, (size_t)input_size);

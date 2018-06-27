@@ -35,6 +35,12 @@
 #include "Machine.h"
 #include "Messages.h"
 
+#ifdef SIL_SIM
+#define SIL_SIM_CONT ,
+#else
+#define SIL_SIM_CONT };
+#endif
+
 /**
  * The commands are defined in an array of function pointers, all of the same shape.
  * There can be a maximum od 255 commands, all of them must be specified in
@@ -68,6 +74,13 @@ typedef enum CommandCode {
   SaveStorageConfig,           /**< Save current configuration in the EEPROM */
   LoadStorageConfig,           /**< Load storage config from EEPROM. Extremely risky, it may be corrupted data */
   LoadStorageCycle,            /**< Load current cycle number from EEPROM. Extremely Risky it may be corrupted data */
+#ifdef SIL_SIM
+  SILTempSensFault,            
+  SILPresActSensFault,    
+  SILPresAccSensFault,
+  SILPresActFault,
+  SILTempActFault,
+#endif
   CommandCodeSize              /**< This last one is a size for the array of function pointers */
 } CommandCode;
 
@@ -190,6 +203,14 @@ const CommandAction cmd_ary[CommandCode::CommandCodeSize] = {cmd_hearthbeat,
                                                              cmd_start_cycle,
                                                              cmd_save_storage_config,
                                                              cmd_load_storage_config,
-                                                             cmd_load_storage_cycle};
+                                                             cmd_load_storage_cycle SIL_SIM_CONT
+                                                             #ifdef SIL_SIM
+                                                               cmd_faulty_temperature_sens,
+                                                               cmd_faulty_pres_act_sens,
+                                                               cmd_faulty_pres_acc_sens,
+                                                               cdm_faulty_pres_actuator,
+                                                               cdm_faulty_temp_actuator };
+                                                             #endif 
+                                                            
 
 #endif /* COMMANDS_H_ */
