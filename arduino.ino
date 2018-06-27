@@ -29,6 +29,12 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "Config.h"
+
+#ifdef CONTROLLINO_VERSION
+#include <Controllino.h>
+#include <SPI.h>
+#endif
+
 #include "Machine.h"
 #include "PresControl.h"
 #include "SerialParser.h"
@@ -54,6 +60,10 @@ volatile MachineState m;
  * \param m the MachineState pointer (that is a singleton)
  */
 void alarm_fnc(MachineState* m) {
+#ifdef CONTROLLINO_VERSION
+  pinMode(STATE_LED0, HIGH);
+  pinMode(STATE_LED1, HIGH);
+#endif
   m->presctrl->alarm();
   m->tempctrl->alarm();
   m->state->state = StateCode::Alarm;
@@ -62,6 +72,7 @@ void alarm_fnc(MachineState* m) {
   }  // Re-enters in the loop immediately
 }
 
+#ifdef EMERGENCYBTN_ENABLE
 /** \brief Emergency button Interrupt routine
  *
  * FIXME: I don't have a better strategy for this. The problem is that we are actually
@@ -70,6 +81,7 @@ void alarm_fnc(MachineState* m) {
  * required after this and it is not a problem.
  */
 void emergency_button_isr() { m.alarm(&m); }
+#endif
 
 /** \brief State Machine Running loop
  *
@@ -106,8 +118,7 @@ void serial_loop() {
         cmd_save_storage_config(m.command->value, &m);
       if (m.command->command == CommandCode::Hearthbeat)
         cmd_hearthbeat(m.command->value, &m);
-    }
-    else {
+    } else {
       // Here we can execute all the commands
       if (m.command->command < CommandCode::CommandCodeSize)
         cmd_ary[m.command->command](m.command->value, &m);
@@ -121,7 +132,15 @@ void serial_loop() {
 // |___/\___|\__|\_,_| .__/
 //                   |_|
 void setup() {
+#ifdef EMERGENCYBTN_ENABLE
   attachInterrupt(EMERGENCYBTN_PIN, emergency_button_isr, EMERGENCYBTN_MODE);
+#endif
+#ifdef CONTROLLINO_VERSION
+  pinMode(STATE_LED0, OUTPUT);
+  pinMode(STATE_LED1, OUTPUT);
+  digitalWrite(STATE_LED0, LOW);
+  digitalWrite(STATE_LED1, LOW);
+#endif
   // The first initialization shall aways be the serial parser
   // since it connects the machine state and the output buffer
   m.serial = new SerialParser(&m);
@@ -132,8 +151,14 @@ void setup() {
   m.alarm = alarm_fnc;
   m.p_low = DEFAULT_P_LOW;
   m.p_high = DEFAULT_P_HIGH;
-
+#ifdef CONTROLLINO_VERSION
+  pinMode(STATE_LED0, HIGH);
+#endif
   m.serial->begin();
+#ifdef CONTROLLINO_VERSION
+  pinMode(STATE_LED0, LOW);
+  pinMode(STATE_LED1, HIGH);
+#endif
   tic = millis();
   toc = tic;
 }
