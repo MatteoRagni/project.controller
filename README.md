@@ -212,13 +212,15 @@ s+ = 1
 `v_enabled` is an additional bit that allows the resistance to be turned on, and can be overridden by the user. When 
 the temperature is inside a certain hysteresis band all the output are turned off: 
 ```
-Condition: s != 0 and Tset - Tdelta ≤ t ≤ Tset + Tdelta
+Condition: (s == 1 and t ≤ Tset) or (s == -1 and t ≥ Tset) 
 x+ = x
 c+ = 0
 r+ = 0
 t+ = 0
 s+ = 0
 ```
+This switch condition is not optimal (the temperature osccilates quite a bit) but it allows to save some interrupts on
+the relays and to preserve their operative time.
 If the system deviates from the set point, after a certain amount of time an alarm is raised.
 ```
 Condition abs(t) ≥ alarm_threshold and TEMP_CTRL = 1

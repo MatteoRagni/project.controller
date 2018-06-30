@@ -64,7 +64,7 @@
  *      t+ = 0
  *      s+ = 1
  *
- *      Condition: s != 0 and Tset - Tdelta ≤ t ≤ Tset + Tdelta
+ *      Condition: (s == 1 and t ≤ Tset) or (s == -1 and t ≥ Tset)
  *      x+ = x
  *      c+ = 0
  *      r+ = 0
@@ -125,6 +125,7 @@ class TempControl {
     bool t_below = (m->state->t_meas <= (m->state->t_set - TEMPCTRL_OFFSET));
     bool t_above = (m->state->t_meas >= (m->state->t_set + TEMPCTRL_OFFSET));
 
+
     // Jump Dynamics
     if ((condition != -1) && t_below) {
       chiller_state = false;
@@ -132,7 +133,7 @@ class TempControl {
       alarm_timer = 0;
       condition = -1;
     }
-    if ((condition != 0) && (!t_below) && (!t_above)) {
+    if (((condition == 1) && (m->state->t_meas <= m->state->t_set)) || ((condition == -1) && (m->state->t_meas >= m->state->t_set))) {
       chiller_state = false;
       resistance_state = false;
       alarm_timer = 0;
