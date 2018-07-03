@@ -71,7 +71,7 @@
 #define PRESCTRL_ACCALARM_PRES_TH 2.0             /**< Time threshold (out-of-bound) for the Accumulator Alarm */
 #define PRESCTRL_ACCALARM_TIME_TH 4.0             /**< Over pressure threshold for the Accumulator Alarm */
 #define PRESCTRL_PI_SATMIN 0                      /**< Minimum value for PI saturation */
-#define PRESCTRL_PI_SATMAX 1024                   /**< Maximum value for PI saturation */
+#define PRESCTRL_PI_SATMAX 255                    /**< Maximum value for PI saturation */
 #define PRESCTRL_PACTUATOR_SENSOR_PIN A13         /**< Pin selection for actuator pressure sensor */
 #define PRESCTRL_PACCUMULATOR_SENSOR_PIN A11      /**< Pin selection for accumulator pressure sensors */
 #define PRESCTRL_PACT_OUT_PIN 44                  /**< Pin selection for actuator command output */
