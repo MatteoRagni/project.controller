@@ -61,8 +61,7 @@ volatile MachineState m;
  */
 void alarm_fnc(MachineState* m) {
 #ifdef CONTROLLINO_VERSION
-  pinMode(STATE_LED0, HIGH);
-  pinMode(STATE_LED1, HIGH);
+  digitalWrite(EMERGENCY_LED, HIGH);
 #endif
   m->presctrl->alarm();
   m->tempctrl->alarm();
@@ -138,8 +137,10 @@ void setup() {
 #ifdef CONTROLLINO_VERSION
   pinMode(STATE_LED0, OUTPUT);
   pinMode(STATE_LED1, OUTPUT);
+  pinMode(EMERGENCY_LED, OUTPUT);
   digitalWrite(STATE_LED0, LOW);
   digitalWrite(STATE_LED1, LOW);
+  digitalWrite(EMERGENCY_LED, LOW);
 #endif
   // The first initialization shall aways be the serial parser
   // since it connects the machine state and the output buffer
@@ -152,12 +153,12 @@ void setup() {
   m.p_low = DEFAULT_P_LOW;
   m.p_high = DEFAULT_P_HIGH;
 #ifdef CONTROLLINO_VERSION
-  pinMode(STATE_LED0, HIGH);
+  digitalWrite(STATE_LED0, HIGH);
 #endif
   m.serial->begin();
 #ifdef CONTROLLINO_VERSION
-  pinMode(STATE_LED0, LOW);
-  pinMode(STATE_LED1, HIGH);
+  digitalWrite(STATE_LED0, LOW);
+  digitalWrite(STATE_LED1, HIGH);
 #endif
   tic = millis();
   toc = tic;
