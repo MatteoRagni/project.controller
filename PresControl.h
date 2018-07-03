@@ -378,6 +378,8 @@ class PresControl {
     pinMode(PRESCTRL_PACCUMULATOR_SENSOR_PIN, INPUT);
     pinMode(PRESCTRL_PACT_OUT_PIN, OUTPUT);
     pinMode(PRESCTRL_ENABLE_PRES_CTRL, OUTPUT);
+    pinMode(PRESCTRL_ENABLE_PUMP_CTRL, OUTPUT);
+    
     disable();
 
     // Initializing exponential moving average filter with n samples
@@ -401,7 +403,10 @@ class PresControl {
    *
    * This function is mandatory in automatic mode in order to make it run
    */
-  void enable() { digitalWrite(PRESCTRL_ENABLE_PRES_CTRL, HIGH); }
+  void enable() { 
+    digitalWrite(PRESCTRL_ENABLE_PRES_CTRL, HIGH);
+    digitalWrite(PRESCTRL_ENABLE_PUMP_CTRL, HIGH);
+  }
 
   /** \brief Disables and cuts-off the actuator output
    *
@@ -409,6 +414,7 @@ class PresControl {
    */
   void disable() {
     digitalWrite(PRESCTRL_ENABLE_PRES_CTRL, LOW);
+    digitalWrite(PRESCTRL_ENABLE_PUMP_CTRL, LOW);
     analogWrite(PRESCTRL_PACT_OUT_PIN, 0);
   }
 
@@ -447,7 +453,7 @@ class PresControl {
 #ifdef SIL_SIM
       sil_sim.write_pressure(m->state->u_pres);
 #else
-      analogWrite(PRESCTRL_PACT_OUT_PIN, m->state->u_pres);
+      analogWrite(PRESCTRL_PACT_OUT_PIN, int(round(m->state->u_pres)));
 #endif
     } else {
       disable();
