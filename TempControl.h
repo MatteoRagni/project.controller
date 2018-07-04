@@ -76,11 +76,11 @@
  */
 class TempControl {
  private:
-  MachineState *m;       /**< Pointer to the machine struct, a data central repository */
-  bool chiller_state;    /**< Chiller on/off state */
-  bool resistance_state; /**< Resistance on/off state */
-  float alarm_timer;     /**< State for the timer accumulator */
-  char condition;        /**< Derivative of the timer accumulator */
+  volatile MachineState *m; /**< Pointer to the machine struct, a data central repository */
+  bool chiller_state;       /**< Chiller on/off state */
+  bool resistance_state;    /**< Resistance on/off state */
+  float alarm_timer;        /**< State for the timer accumulator */
+  char condition;           /**< Derivative of the timer accumulator */
 
   const float delta_t = (float(LOOP_TIMING) / 1000.0); /**< Delta time for integration */
   const float movavg_alpha = TEMPCTRL_MOVAVG_ALPHA;    /**< Moving average scaling factor for filtering */
@@ -95,7 +95,8 @@ class TempControl {
    * run outside a function or it will not work!
    * \param m a pointer to the MachineState structure, from wich we take and store measurements and references.
    */
-  TempControl(MachineState *_m) : m(_m), chiller_state(false), resistance_state(false), alarm_timer(0), condition(0) {
+  TempControl(volatile MachineState *_m)
+      : m(_m), chiller_state(false), resistance_state(false), alarm_timer(0), condition(0) {
     // Setting up output pin
     pinMode(TEMPCTRL_CHILLER_PIN, OUTPUT);
     pinMode(TEMPCTRL_RESISTANCE_PIN, OUTPUT);
@@ -125,7 +126,6 @@ class TempControl {
     bool t_below = (m->state->t_meas <= (m->state->t_set - TEMPCTRL_OFFSET));
     bool t_above = (m->state->t_meas >= (m->state->t_set + TEMPCTRL_OFFSET));
 
-
     // Jump Dynamics
     if ((condition != -1) && t_below) {
       chiller_state = false;
@@ -133,7 +133,8 @@ class TempControl {
       alarm_timer = 0;
       condition = -1;
     }
-    if (((condition == 1) && (m->state->t_meas <= m->state->t_set)) || ((condition == -1) && (m->state->t_meas >= m->state->t_set))) {
+    if (((condition == 1) && (m->state->t_meas <= m->state->t_set)) ||
+        ((condition == -1) && (m->state->t_meas >= m->state->t_set))) {
       chiller_state = false;
       resistance_state = false;
       alarm_timer = 0;

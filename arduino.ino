@@ -59,10 +59,9 @@ volatile MachineState m;
  * changes the overall state for the system.
  * \param m the MachineState pointer (that is a singleton)
  */
-void alarm_fnc(MachineState* m) {
+void alarm_fnc(volatile MachineState* m) {
 #ifdef CONTROLLINO_VERSION
-  pinMode(STATE_LED0, HIGH);
-  pinMode(STATE_LED1, HIGH);
+  digitalWrite(EMERGENCY_LED, HIGH);
 #endif
   m->presctrl->alarm();
   m->tempctrl->alarm();
@@ -121,16 +120,18 @@ void serial_loop() {
     } else {
       // Here we can execute all the commands
       if (m.command->command < CommandCode::CommandCodeSize)
-        cmd_ary[m.command->command](m.command->value, &m);
+        cmd_ary[(size_t)m.command->command](m.command->value, &m);
     }
   }
 }
 
-//  ___      _
-// / __| ___| |_ _  _ _ __
-// \__ \/ -_)  _| || | '_ \
-// |___/\___|\__|\_,_| .__/
-//                   |_|
+/*
+ *  ___      _
+ * / __| ___| |_ _  _ _ __
+ * \__ \/ -_)  _| || | '_ \
+ * |___/\___|\__|\_,_| .__/
+ *                   |_|
+ */
 void setup() {
 #ifdef EMERGENCYBTN_ENABLE
   attachInterrupt(EMERGENCYBTN_PIN, emergency_button_isr, EMERGENCYBTN_MODE);
@@ -138,8 +139,10 @@ void setup() {
 #ifdef CONTROLLINO_VERSION
   pinMode(STATE_LED0, OUTPUT);
   pinMode(STATE_LED1, OUTPUT);
+  pinMode(EMERGENCY_LED, OUTPUT);
   digitalWrite(STATE_LED0, LOW);
   digitalWrite(STATE_LED1, LOW);
+  digitalWrite(EMERGENCY_LED, LOW);
 #endif
   // The first initialization shall aways be the serial parser
   // since it connects the machine state and the output buffer
@@ -152,22 +155,24 @@ void setup() {
   m.p_low = DEFAULT_P_LOW;
   m.p_high = DEFAULT_P_HIGH;
 #ifdef CONTROLLINO_VERSION
-  pinMode(STATE_LED0, HIGH);
+  digitalWrite(STATE_LED0, HIGH);
 #endif
   m.serial->begin();
 #ifdef CONTROLLINO_VERSION
-  pinMode(STATE_LED0, LOW);
-  pinMode(STATE_LED1, HIGH);
+  digitalWrite(STATE_LED0, LOW);
+  digitalWrite(STATE_LED1, HIGH);
 #endif
   tic = millis();
   toc = tic;
 }
 
-//  _
-// | |   ___  ___ _ __
-// | |__/ _ \/ _ \ '_ \
-// |____\___/\___/ .__/
-//               |_|
+/*
+ *  _
+ * | |   ___  ___ _ __
+ * | |__/ _ \/ _ \ '_ \
+ * |____\___/\___/ .__/
+ *               |_|
+ */
 void loop() {
   toc = millis();
   if (((unsigned long)(toc - tic)) >= LOOP_TIMING) {

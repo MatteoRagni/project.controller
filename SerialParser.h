@@ -63,9 +63,9 @@ typedef unsigned int size_t; /**< Type definition for size_t as index in arrays 
  */
 class SerialParser {
  private:
-  MachineState* m; /**< Machine state pointer for some operations */
-  input_u input;   /**< Input data holder */
-  output_u output; /**< Output data holder */
+  volatile MachineState* m; /**< Machine state pointer for some operations */
+  input_u input;            /**< Input data holder */
+  output_u output;          /**< Output data holder */
 
   char input_buf[input_buffer_size]; /**< Placeholder buffer for input data */
   volatile size_t idx;               /**< Current buffer index for receiving */
@@ -85,7 +85,7 @@ class SerialParser {
    * to eliminate the need of a copy operation.
    * \param _m a pointer to the MachineState
    */
-  SerialParser(MachineState* _m) : m(_m), idx(0), data_ready(false), error(false) {
+  SerialParser(volatile MachineState* _m) : m(_m), idx(0), data_ready(false), error(false) {
     m->state = &(output.s);
     m->command = &(input.s);
 
@@ -205,13 +205,13 @@ class SerialParser {
   };
 
   /** \brief Pointer to constant input command structure */
-  input_s* const get_input_ptr() { return &(input.s); };
+  // input_s* const get_input_ptr() { return &(input.s); };
   /** \brief Pointer to output structure, that must be filled BEFORE sending */
-  output_s* get_output_ptr() { return &(output.s); };
+  // output_s* get_output_ptr() { return &(output.s); };
   /** \brief Input size with check */
-  const size_t get_input_size() { return input_buffer_size; };
+  // size_t get_input_size() { return input_buffer_size; };
   /** \brief Output size with check */
-  const size_t get_output_size() { return output_buffer_size; }
+  // size_t get_output_size() { return output_buffer_size; }
 
  private:
   /** \brief Checksum for transimitted data

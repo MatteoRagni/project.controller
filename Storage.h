@@ -62,7 +62,7 @@ class Storage {
   int cycle_addr;              /**< Cycle number EEPROM address */
   storage_s config;            /**< The configuration buffer struct */
   unsigned long current_cycle; /**< The current cycle number buffer */
-  MachineState* m;
+  volatile MachineState* m;
 
  public:
   /** \brief Class constructor initializes the address
@@ -70,7 +70,7 @@ class Storage {
    * The address are automatically evaluated.
    * \param _m pointer to the machine state
    */
-  Storage(MachineState* _m) : m(_m) {
+  Storage(volatile MachineState* _m) : m(_m) {
     config_addr = STORAGE_REF_ADDRESS;
     cycle_addr = config_addr + sizeof(storage_s);
   };

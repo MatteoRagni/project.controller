@@ -41,7 +41,7 @@ class PresControl;
 class Storage;
 
 typedef struct MachineState MachineState;
-typedef void (*alarm_handler)(MachineState* m);
+typedef void (*alarm_handler)(volatile MachineState* m);
 
 typedef enum ControlEnabler { Chiller = 0x1, Resistance = 0x2, PActuator = 0x4 } ControlEnabler;
 

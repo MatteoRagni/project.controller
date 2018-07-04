@@ -75,34 +75,34 @@ typedef enum CommandCode {
   LoadStorageConfig,           /**< Load storage config from EEPROM. Extremely risky, it may be corrupted data */
   LoadStorageCycle,            /**< Load current cycle number from EEPROM. Extremely Risky it may be corrupted data */
 #ifdef SIL_SIM
-  SILTempSensFault,            
-  SILPresActSensFault,    
+  SILTempSensFault,
+  SILPresActSensFault,
   SILPresAccSensFault,
   SILPresActFault,
   SILTempActFault,
 #endif
-  CommandCodeSize              /**< This last one is a size for the array of function pointers */
+  CommandCodeSize /**< This last one is a size for the array of function pointers */
 } CommandCode;
 
-typedef void (*CommandAction)(float value, MachineState *m);
+typedef void (*CommandAction)(float, volatile MachineState *);
 
-void cmd_hearthbeat(float value, MachineState *m) { m->serial->send(); }
+void cmd_hearthbeat(float, volatile MachineState *m) { m->serial->send(); }
 
-void cmd_manual_temperature_control(float value, MachineState *m) {
+void cmd_manual_temperature_control(float, volatile MachineState *m) {
   m->state->config &= ((0xFF ^ ControlEnabler::Chiller) | (0xFF ^ ControlEnabler::Resistance));
 }
 
-void cmd_automatic_temperature_control(float value, MachineState *m) {
+void cmd_automatic_temperature_control(float, volatile MachineState *m) {
   m->state->config |= (ControlEnabler::Chiller | ControlEnabler::Resistance);
 }
 
-void cmd_manual_pressure_control(float value, MachineState *m) {
+void cmd_manual_pressure_control(float, volatile MachineState *m) {
   m->state->config &= (0xFF ^ ControlEnabler::PActuator);
 }
 
-void cmd_automatic_pressure_control(float value, MachineState *m) { m->state->config |= ControlEnabler::PActuator; }
+void cmd_automatic_pressure_control(float, volatile MachineState *m) { m->state->config |= ControlEnabler::PActuator; }
 
-void cmd_toggle_pause_cycle(float value, MachineState *m) {
+void cmd_toggle_pause_cycle(float, volatile MachineState *m) {
   if (m->state->state == StateCode::Pause) {
     m->state->state = StateCode::Running;
   } else if (m->state->state == StateCode::Running) {
@@ -110,58 +110,62 @@ void cmd_toggle_pause_cycle(float value, MachineState *m) {
   }
 }
 
-void cmd_emergency_stop_cycle(float value, MachineState *m) {
+void cmd_emergency_stop_cycle(float, volatile MachineState *m) {
   m->state->error = ErrorMessage::SerialStop;
   m->alarm(m);
 }
 
-void cmd_toggle_chiller_actuation(float value, MachineState *m) { m->state->config ^= ControlEnabler::Chiller; }
+void cmd_toggle_chiller_actuation(float, volatile MachineState *m) { m->state->config ^= ControlEnabler::Chiller; }
 
-void cmd_toggle_resistance_actuation(float value, MachineState *m) { m->state->config ^= ControlEnabler::Resistance; }
+void cmd_toggle_resistance_actuation(float, volatile MachineState *m) {
+  m->state->config ^= ControlEnabler::Resistance;
+}
 
-void cmd_set_temperature(float value, MachineState *m) {
+void cmd_set_temperature(float value, volatile MachineState *m) {
   m->state->t_set = constrain(value, SERIAL_PARSER_TEMP_MIN, SERIAL_PARSER_TEMP_MAX);
 }
 
-void cmd_set_pressure_high(float value, MachineState *m) {
+void cmd_set_pressure_high(float value, volatile MachineState *m) {
   m->p_high = constrain(value, SERIAL_PARSER_PRESSURE_MIN, SERIAL_PARSER_PRESSURE_MAX);
 }
 
-void cmd_set_pressure_low(float value, MachineState *m) {
+void cmd_set_pressure_low(float value, volatile MachineState *m) {
   m->p_low = constrain(value, SERIAL_PARSER_PRESSURE_MIN, SERIAL_PARSER_PRESSURE_MAX);
 }
 
-void cmd_set_pressure(float value, MachineState *m) {
+void cmd_set_pressure(float value, volatile MachineState *m) {
   m->state->p_set = constrain(value, SERIAL_PARSER_PRESSURE_MIN, SERIAL_PARSER_PRESSURE_MAX);
 }
 
-void cmd_set_override_PI_control(float value, MachineState *m) {
+void cmd_set_override_PI_control(float value, volatile MachineState *m) {
   m->state->u_pres = constrain(value, PRESCTRL_PI_SATMIN, PRESCTRL_PI_SATMAX);
 }
 
-void cmd_set_PI_proportional_gain(float value, MachineState *m) {
+void cmd_set_PI_proportional_gain(float value, volatile MachineState *m) {
   m->state->kp = constrain(value, SERIAL_PARSER_KPI_MIN, SERIAL_PARSER_KPI_MAX);
 }
 
-void cmd_set_PI_integral_gain(float value, MachineState *m) {
+void cmd_set_PI_integral_gain(float value, volatile MachineState *m) {
   m->state->ki = constrain(value, SERIAL_PARSER_KPI_MIN, SERIAL_PARSER_KPI_MAX);
 }
 
-void cmd_set_maximum_cycle_number(float value, MachineState *m) {
+void cmd_set_maximum_cycle_number(float value, volatile MachineState *m) {
   m->max_cycle = (unsigned long)(constrain(value, 0, 1e12));
 }
 
-void cmd_set_current_cycle_number(float value, MachineState *m) {
+void cmd_set_current_cycle_number(float value, volatile MachineState *m) {
   m->cycle = (unsigned long)(constrain(value, 0, 1e12));
 }
 
-void cmd_set_reference_period(float value, MachineState *m) {
+void cmd_set_reference_period(float value, volatile MachineState *m) {
   m->state->period = constrain(value, SERIAL_PARSER_PERIOD_MIN, SERIAL_PARSER_PERIOD_MAX);
 }
 
-void cmd_set_reference_duty_cycle(float value, MachineState *m) { m->state->duty_cycle = constrain(value, 0.0, 1.0); }
+void cmd_set_reference_duty_cycle(float value, volatile MachineState *m) {
+  m->state->duty_cycle = constrain(value, 0.0, 1.0);
+}
 
-void cmd_system_reboot(float value, MachineState *m) {
+void cmd_system_reboot(float, volatile MachineState *m) {
   m->tempctrl->disable();
   m->presctrl->disable();
 
@@ -170,13 +174,13 @@ void cmd_system_reboot(float value, MachineState *m) {
   };
 }
 
-void cmd_start_cycle(float value, MachineState *m) { m->state->state = StateCode::Running; }
+void cmd_start_cycle(float, volatile MachineState *m) { m->state->state = StateCode::Running; }
 
-void cmd_save_storage_config(float value, MachineState *m) { m->storage->save_config(); }
+void cmd_save_storage_config(float, volatile MachineState *m) { m->storage->save_config(); }
 
-void cmd_load_storage_config(float value, MachineState *m) { m->storage->load_config(); }
+void cmd_load_storage_config(float, volatile MachineState *m) { m->storage->load_config(); }
 
-void cmd_load_storage_cycle(float value, MachineState *m) { m->storage->load_cycle(); }
+void cmd_load_storage_cycle(float, volatile MachineState *m) { m->storage->load_cycle(); }
 
 // TODO: The order of the function pointers MATTERS!
 const CommandAction cmd_ary[CommandCode::CommandCodeSize] = {cmd_hearthbeat,
@@ -204,13 +208,12 @@ const CommandAction cmd_ary[CommandCode::CommandCodeSize] = {cmd_hearthbeat,
                                                              cmd_save_storage_config,
                                                              cmd_load_storage_config,
                                                              cmd_load_storage_cycle SIL_SIM_CONT
-                                                             #ifdef SIL_SIM
-                                                               cmd_faulty_temperature_sens,
-                                                               cmd_faulty_pres_act_sens,
-                                                               cmd_faulty_pres_acc_sens,
-                                                               cdm_faulty_pres_actuator,
-                                                               cdm_faulty_temp_actuator };
-                                                             #endif 
-                                                            
+#ifdef SIL_SIM
+                                                                 cmd_faulty_temperature_sens,
+                                                             cmd_faulty_pres_act_sens,
+                                                             cmd_faulty_pres_acc_sens,
+                                                             cdm_faulty_pres_actuator,
+                                                             cdm_faulty_temp_actuator};
+#endif
 
 #endif /* COMMANDS_H_ */

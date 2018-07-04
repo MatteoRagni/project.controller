@@ -37,6 +37,7 @@
 #include "SIL.h"
 #endif
 
+#ifndef PRESCTRL_DUMPING_GENERATOR
 /** \brief Square wave generator class
  *
  * This class is actually a counter that is able to generate a square wave output
@@ -106,6 +107,90 @@ class SquareWaveGenerator {
     (*y_set) = (s ? (*y1) : (*y0));
   };
 };
+
+#else
+
+/** \brief Dumping Square wave generator class
+ *
+ * This class is actually a counter that is able to generate a square wave output
+ * inside two limits. The square wave period are defined upon PERIOD and DUTY CYCLE.
+ * In addition to the old version, this square wave generator dumpes the pressure by
+ * directly commanding the valve line. To do that, the reference generator directly
+ * commands the pressure valve PB/PTank, which is defined by the pin PRESCTRL_ENABLE_PRES_CTRL.
+ * The class also needs to read the current pressure value.
+ * The dynamical generator is:
+ *
+ *     t(0) = 0, s(0) = 1, r(0) = y1
+ *
+ *     t' = 1
+ *     s' = 0
+ *     r' = 0
+ *
+ *     Condition: t ≥ duty_cycle * T and s = 1
+ *     t+ = t
+ *     s+ = 1 - s
+ *     r+ = 0.0 (and sets valve to PTank)
+ *
+ *     Condition: t ≥ T and s = 0
+ *     t+ = 0
+ *     s+ = 1
+ *     r+ = y1 (and sets valve to PB)
+ *     This condition also increases the cycle count
+ *
+ *     Condition: s = 0 and p_meas ≤ y0
+ *     t+ = t
+ *     s+ = s
+ *     r+ = y0 (and sets valve to PB)
+ *
+ */
+class SquareWaveGeneratorDump {
+  float t;                  /**< Internal timer for the system */
+  char s;                   /**< Internal logic state for the system */
+  volatile MachineState *m; /**< Pointer to state machine (we need more info) */
+
+  const float delta_t = float(LOOP_TIMING) / 1000.0; /**< Timing for the integrator */
+  const int pin_sel = PRESCTRL_ENABLE_PRES_CTRL;
+
+ public:
+  /** \brief Class constructor.
+   *
+   * The class constructor gets a Machine State pointer. We need Way more information
+   * with respect to the classical SquareWaveGenerator, it is easier in this way.
+   * \param _m pointer to the Machine State
+   */
+  SquareWaveGeneratorDump(volatile MachineState *_m) : t(0), s(1), m(_m) { m->state->p_set = 0; };
+
+  /** \brief Evaluates the new value for the reference
+   *
+   * Evaluates the new value for the reference
+   */
+  void reference() {
+    t += delta_t;
+
+    if ((t >= (m->state->period * m->state->duty_cycle) && (s == 1))) {
+      s = 0;
+
+      m->state->p_set = 0.0;
+      digitalWrite(pin_sel, LOW);
+    }
+
+    if ((s == 0) && (m->state->p_meas <= m->p_low)) {
+      m->state->p_set = m->p_low;
+      digitalWrite(pin_sel, HIGH);
+    }
+
+    if ((t >= m->state->period) && (s == 0)) {
+      s = 1;
+      t = 0;
+
+      m->state->p_set = m->p_high;
+      digitalWrite(pin_sel, HIGH);
+      m->cycle += 1;  // Increment cycle number
+    }
+  };
+};
+
+#endif
 
 /** \brief Controller Alarm counter class
  *
@@ -345,8 +430,12 @@ class PIController {
  * threshold for a defined time.
  */
 class PresControl {
-  MachineState *m;          /**< Pointer to the machine */
+  volatile MachineState *m; /**< Pointer to the machine */
+#ifndef PRESCTRL_DUMPING_GENERATOR
   SquareWaveGenerator *ref; /**< Square wave generator structure pointer */
+#else
+  SquareWaveGeneratorDump *ref;
+#endif
   ControllerAlarm *al_ctrl; /**< Alarm control structure pointer */
   AccumulatorAlarm *al_acc; /**< Accumulator alarm structure pointer */
   PIController *ctrl;       /**< PI controller structure pointer */
@@ -367,9 +456,13 @@ class PresControl {
    * measures for the pressure sensors, and this is done during class initialization.
    * \param m a pointer to the MachineState struct that contains all the elements.
    */
-  PresControl(MachineState *_m) : m(_m) {
+  PresControl(volatile MachineState *_m) : m(_m) {
+#ifndef PRESCTRL_DUMPING_GENERATOR
     ref = new SquareWaveGenerator(&(m->state->period), &(m->state->duty_cycle), &(m->p_high), &(m->p_low),
                                   &(m->state->p_set), &(m->cycle));
+#else
+    ref = new SquareWaveGeneratorDump(m);
+#endif
     al_ctrl = new ControllerAlarm(&(m->state->p_meas), &(m->state->p_set));
     al_acc = new AccumulatorAlarm(&(m->state->p_meas), &(m->state->q_meas));
     ctrl = new PIController(&(m->state->kp), &(m->state->ki), &(m->state->p_meas), &(m->state->p_set));
@@ -378,6 +471,8 @@ class PresControl {
     pinMode(PRESCTRL_PACCUMULATOR_SENSOR_PIN, INPUT);
     pinMode(PRESCTRL_PACT_OUT_PIN, OUTPUT);
     pinMode(PRESCTRL_ENABLE_PRES_CTRL, OUTPUT);
+    pinMode(PRESCTRL_ENABLE_PUMP_CTRL, OUTPUT);
+
     disable();
 
     // Initializing exponential moving average filter with n samples
@@ -401,7 +496,12 @@ class PresControl {
    *
    * This function is mandatory in automatic mode in order to make it run
    */
-  void enable() { digitalWrite(PRESCTRL_ENABLE_PRES_CTRL, HIGH); }
+  void enable() {
+#ifndef PRESCTRL_DUMPING_GENERATOR
+    digitalWrite(PRESCTRL_ENABLE_PRES_CTRL, HIGH);
+#endif
+    digitalWrite(PRESCTRL_ENABLE_PUMP_CTRL, HIGH);
+  }
 
   /** \brief Disables and cuts-off the actuator output
    *
@@ -409,6 +509,7 @@ class PresControl {
    */
   void disable() {
     digitalWrite(PRESCTRL_ENABLE_PRES_CTRL, LOW);
+    digitalWrite(PRESCTRL_ENABLE_PUMP_CTRL, LOW);
     analogWrite(PRESCTRL_PACT_OUT_PIN, 0);
   }
 
@@ -447,7 +548,7 @@ class PresControl {
 #ifdef SIL_SIM
       sil_sim.write_pressure(m->state->u_pres);
 #else
-      analogWrite(PRESCTRL_PACT_OUT_PIN, m->state->u_pres);
+      analogWrite(PRESCTRL_PACT_OUT_PIN, int(round(m->state->u_pres)));
 #endif
     } else {
       disable();
