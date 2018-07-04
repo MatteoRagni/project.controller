@@ -44,9 +44,10 @@
 #define LOOP_TIMING 30 /**< Defines the ms for timing the loop (must be enough for completing the loop) */
 
 // Emergency Button Configuration
-#define EMERGENCYBTN_ENABLE       /**< Enable Emergency button logic */
-#define EMERGENCYBTN_PIN A0       /**< Pin for emergency button, must have Interrupt capabilities */
-#define EMERGENCYBTN_MODE FALLING /**< Default mode for emergency button signal: valid are RISING, LOW, CHANGE, FALLING */
+#define EMERGENCYBTN_ENABLE /**< Enable Emergency button logic */
+#define EMERGENCYBTN_PIN A0 /**< Pin for emergency button, must have Interrupt capabilities */
+#define EMERGENCYBTN_MODE \
+  FALLING /**< Default mode for emergency button signal: valid are RISING, LOW, CHANGE, FALLING */
 
 // Communication Configurations
 #define SERIAL_PORT Serial      /**< Serial port used for communication */
@@ -64,7 +65,8 @@
 #define TEMPCTRL_SENSOR_Q (90.0 - TEMPCTRL_SENSOR_M * 970.0) /**< Sensor offset coefficient */
 
 // Pressure Control Configurations
-#define PRESCTRL_DUMPING_GENERATOR                /**< If defined uses SquareWaveGeneratorDump, otherwise uses simple SquareWaveGenerator */
+#define PRESCTRL_DUMPING_GENERATOR                /**< If defined uses SquareWaveGeneratorDump, otherwise uses simple \
+                                                     SquareWaveGenerator */
 #define PRESCTRL_CTRLALARM_PRES_TH 2.0            /**< Pressure threshold for the Controller Alarm */
 #define PRESCTRL_CTRLALARM_TIME_TH 6.0            /**< Time threshold (out-of-bound) for the Controller Alarm */
 #define PRESCTRL_CTRLALARM_OVERPRESS_TH 40.0      /**< Over pressure threshold for the Controller Alarm */
@@ -85,14 +87,16 @@
 #define PRESCTRL_MOVAVG_ACCUMULATOR 0.25 /**< Exponential Moving average trade off */
 
 // Serial Command parser configurations (=limits in inp ut)
-#define SERIAL_PARSER_TEMP_MIN 15.0     /**< Minimum accepted temperature set point in celsius */
-#define SERIAL_PARSER_TEMP_MAX 78.0     /**< Maximum accepted temperature set point in celsius */
-#define SERIAL_PARSER_PRESSURE_MIN 0.0  /**< Maximum accepted temperature set point in bar */
-#define SERIAL_PARSER_PRESSURE_MAX PRESCTRL_CTRLALARM_OVERPRESS_TH /**< Maximum accepted pressureure set point in bar (equal to PRESCTRL_CTRLALARM_OVERPRESS_TH)  */
-#define SERIAL_PARSER_KPI_MIN -99.0     /**< Minimum value for the PI gain */
-#define SERIAL_PARSER_KPI_MAX 99.0      /**< Maximum value for the PI gain */
-#define SERIAL_PARSER_PERIOD_MIN 1.0    /**< Minimum value for the square wave generation in secs */
-#define SERIAL_PARSER_PERIOD_MAX 30.0   /**< Maximum value for the square wave generation in secs */
+#define SERIAL_PARSER_TEMP_MIN 15.0    /**< Minimum accepted temperature set point in celsius */
+#define SERIAL_PARSER_TEMP_MAX 78.0    /**< Maximum accepted temperature set point in celsius */
+#define SERIAL_PARSER_PRESSURE_MIN 0.0 /**< Maximum accepted temperature set point in bar */
+#define SERIAL_PARSER_PRESSURE_MAX                                                                 \
+  PRESCTRL_CTRLALARM_OVERPRESS_TH     /**< Maximum accepted pressureure set point in bar (equal to \
+                                         PRESCTRL_CTRLALARM_OVERPRESS_TH)  */
+#define SERIAL_PARSER_KPI_MIN -99.0   /**< Minimum value for the PI gain */
+#define SERIAL_PARSER_KPI_MAX 99.0    /**< Maximum value for the PI gain */
+#define SERIAL_PARSER_PERIOD_MIN 1.0  /**< Minimum value for the square wave generation in secs */
+#define SERIAL_PARSER_PERIOD_MAX 30.0 /**< Maximum value for the square wave generation in secs */
 
 // Storage configuration
 #define STORAGE_REF_ADDRESS 0 /**< The default storage reference address offset */

@@ -472,7 +472,11 @@ class PresControl {
     pinMode(PRESCTRL_PACT_OUT_PIN, OUTPUT);
     pinMode(PRESCTRL_ENABLE_PRES_CTRL, OUTPUT);
     pinMode(PRESCTRL_ENABLE_PUMP_CTRL, OUTPUT);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> f76e9f462d21f984c9735e076ebf6269d3bcdb84
     disable();
 
     // Initializing exponential moving average filter with n samples
@@ -496,10 +500,15 @@ class PresControl {
    *
    * This function is mandatory in automatic mode in order to make it run
    */
+<<<<<<< HEAD
   void enable() {
 #ifndef PRESCTRL_DUMPING_GENERATOR
     digitalWrite(PRESCTRL_ENABLE_PRES_CTRL, HIGH);
 #endif
+=======
+  void enable() { 
+    digitalWrite(PRESCTRL_ENABLE_PRES_CTRL, HIGH);
+>>>>>>> f76e9f462d21f984c9735e076ebf6269d3bcdb84
     digitalWrite(PRESCTRL_ENABLE_PUMP_CTRL, HIGH);
   }
 
