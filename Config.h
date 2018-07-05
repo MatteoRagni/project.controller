@@ -56,7 +56,7 @@
 
 // Temperature Control Configurations
 #define TEMPCTRL_OFFSET 5.0                                  /**< Offset degrees for temperature controller */
-#define TEMPCTRL_LIMIT_TIME_ALARM 300.0                      /**< Time accumulator for alarm limit */
+#define TEMPCTRL_LIMIT_TIME_ALARM 600.0                      /**< Time accumulator for alarm limit */
 #define TEMPCTRL_CHILLER_PIN 30                              /**< Pin for chiller digital out */
 #define TEMPCTRL_RESISTANCE_PIN 31                           /**< Pin for resistance digital out */
 #define TEMPCTRL_TEMPSENSOR_PIN A12                          /**< Pin for analog temperature sensor */
