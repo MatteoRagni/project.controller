@@ -77,7 +77,10 @@
 #define PRESCTRL_PACTUATOR_SENSOR_PIN A13         /**< Pin selection for actuator pressure sensor */
 #define PRESCTRL_PACCUMULATOR_SENSOR_PIN A11      /**< Pin selection for accumulator pressure sensors */
 #define PRESCTRL_PACT_OUT_PIN 44                  /**< Pin selection for actuator command output */
-#define PRESCTRL_ENABLE_PRES_CTRL 11              /**< Pin for enabling PB pressure control */
+#define PRESCTRL_LINE_PA_PIN 12                   /**< Pin for enabling PA line */
+#define PRESCTRL_LINE_PB_PIN 11                   /**< Pin for enabling PB line */
+#define PRESCTRL_LINE_PIN PRESCTRL_LINE_PA_PIN    /**< Line used by the controller */
+#define PRESCTRL_ENABLE_PRES_CTRL 13              /**< Pin for enabling pressure control */
 #define PRESCTRL_ENABLE_PUMP_CTRL 22              /**< Pin for enabling pump */
 #define PRESCTRL_SENSOR_ACTUATOR_M (60.0 / 775.8) /**< Sensor linear coefficient */
 #define PRESCTRL_SENSOR_ACTUATOR_Q (60.0 - PRESCTRL_SENSOR_ACTUATOR_M * 970.0)      /**< Sensor offset coefficient */
