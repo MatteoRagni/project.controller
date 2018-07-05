@@ -118,28 +118,32 @@ class SquareWaveGenerator {
  * directly commanding the valve line. To do that, the reference generator directly
  * commands the pressure valve PB/PTank, which is defined by the pin PRESCTRL_ENABLE_PRES_CTRL.
  * The class also needs to read the current pressure value.
+ * Logical states are:
+ *  0. Dumping
+ *  1. Low pressure
+ *  2. High pressure
  * The dynamical generator is:
  *
- *     t(0) = 0, s(0) = 1, r(0) = y1
+ *     t(0) = 0, s(0) = 2, r(0) = y1
  *
  *     t' = 1
  *     s' = 0
  *     r' = 0
  *
- *     Condition: t ≥ duty_cycle * T and s = 1
+ *     Condition: t ≥ duty_cycle * T and s = 2
  *     t+ = t
- *     s+ = 1 - s
+ *     s+ = 0 (Dumping)
  *     r+ = 0.0 (and sets valve to PTank)
  *
- *     Condition: t ≥ T and s = 0
+ *     Condition: t ≥ T and s = 1
  *     t+ = 0
- *     s+ = 1
+ *     s+ = 2
  *     r+ = y1 (and sets valve to PB)
  *     This condition also increases the cycle count
  *
  *     Condition: s = 0 and p_meas ≤ y0
  *     t+ = t
- *     s+ = s
+ *     s+ = 1
  *     r+ = y0 (and sets valve to PB)
  *
  */
@@ -158,7 +162,7 @@ class SquareWaveGeneratorDump {
    * with respect to the classical SquareWaveGenerator, it is easier in this way.
    * \param _m pointer to the Machine State
    */
-  SquareWaveGeneratorDump(volatile MachineState *_m) : t(0), s(1), m(_m) { m->state->p_set = 0; };
+  SquareWaveGeneratorDump(volatile MachineState *_m) : t(0), s(2), m(_m) { m->state->p_set = m->p_high; };
 
   /** \brief Evaluates the new value for the reference
    *
@@ -167,26 +171,25 @@ class SquareWaveGeneratorDump {
   void reference() {
     t += delta_t;
 
-    if ((t >= (m->state->period * m->state->duty_cycle) && (s == 1))) {
+    if ((t >= (m->state->period * m->state->duty_cycle) && (s == 2))) {
       s = 0;
 
       m->state->p_set = 0.0;
-      digitalWrite(pin_sel, LOW);
     }
 
     if ((s == 0) && (m->state->p_meas <= m->p_low)) {
+      s = 1;
       m->state->p_set = m->p_low;
-      digitalWrite(pin_sel, HIGH);
     }
 
-    if ((t >= m->state->period) && (s == 0)) {
-      s = 1;
+    if ((t >= m->state->period) && (s == 1)) {
+      s = 2;
       t = 0;
 
       m->state->p_set = m->p_high;
-      digitalWrite(pin_sel, HIGH);
       m->cycle += 1;  // Increment cycle number
     }
+    digitalWrite(pin_sel, (s ? HIGH : LOW);
   };
 };
 
