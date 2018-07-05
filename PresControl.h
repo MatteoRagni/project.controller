@@ -177,7 +177,8 @@ class SquareWaveGeneratorDump {
       m->state->p_set = 0.0;
     }
 
-    if ((s == 0) && (m->state->p_meas <= m->p_low)) {
+    /* if ((s == 0) && (m->state->p_meas <= m->p_low)) {  We use the accumulator pressure sensor instead of the actuator one */
+    if ((s == 0) && (m->state->p_meas <= m->p_low))
       s = 1;
       m->state->p_set = m->p_low;
     }
@@ -468,7 +469,9 @@ class PresControl {
 #endif
     al_ctrl = new ControllerAlarm(&(m->state->p_meas), &(m->state->p_set));
     al_acc = new AccumulatorAlarm(&(m->state->p_meas), &(m->state->q_meas));
-    ctrl = new PIController(&(m->state->kp), &(m->state->ki), &(m->state->p_meas), &(m->state->p_set));
+    /* ctrl = new PIController(&(m->state->kp), &(m->state->ki), &(m->state->p_meas), &(m->state->p_set));
+       For the PI controller we use the accumulator pressure instead of the actuator one */
+    ctrl = new PIController(&(m->state->kp), &(m->state->ki), &(m->state->q_meas), &(m->state->p_set));
     // Initialize input and output pin
     pinMode(PRESCTRL_PACTUATOR_SENSOR_PIN, INPUT);
     pinMode(PRESCTRL_PACCUMULATOR_SENSOR_PIN, INPUT);
