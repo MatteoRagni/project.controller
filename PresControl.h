@@ -116,7 +116,7 @@ class SquareWaveGenerator {
  * inside two limits. The square wave period are defined upon PERIOD and DUTY CYCLE.
  * In addition to the old version, this square wave generator dumpes the pressure by
  * directly commanding the valve line. To do that, the reference generator directly
- * commands the pressure valve PB/PTank, which is defined by the pin PRESCTRL_ENABLE_PRES_CTRL.
+ * commands the pressure valve PB/PTank, which is defined by the pin PRESCTRL_LINE_PIN.
  * The class also needs to read the current pressure value.
  * Logical states are:
  *  0. Dumping
@@ -153,7 +153,7 @@ class SquareWaveGeneratorDump {
   volatile MachineState *m; /**< Pointer to state machine (we need more info) */
 
   const float delta_t = float(LOOP_TIMING) / 1000.0; /**< Timing for the integrator */
-  const int pin_sel = PRESCTRL_ENABLE_PRES_CTRL;
+  const int pin_sel = PRESCTRL_LINE_PIN;
 
  public:
   /** \brief Class constructor.
@@ -475,6 +475,7 @@ class PresControl {
     pinMode(PRESCTRL_PACT_OUT_PIN, OUTPUT);
     pinMode(PRESCTRL_ENABLE_PRES_CTRL, OUTPUT);
     pinMode(PRESCTRL_ENABLE_PUMP_CTRL, OUTPUT);
+    pinMode(PRESCTRL_LINE_PIN, OUTPUT);
 
     disable();
 
@@ -501,8 +502,9 @@ class PresControl {
    */
   void enable() {
 #ifndef PRESCTRL_DUMPING_GENERATOR
-    digitalWrite(PRESCTRL_ENABLE_PRES_CTRL, HIGH);
+    digitalWrite(PRESCTRL_LINE_PIN, HIGH);
 #endif
+    digitalWrite(PRESCTRL_ENABLE_PRES_CTRL, HIGH);
     digitalWrite(PRESCTRL_ENABLE_PUMP_CTRL, HIGH);
   }
 
@@ -511,6 +513,7 @@ class PresControl {
    * This function must run when we want to cut off the actuator
    */
   void disable() {
+    digitalWrite(PRESCTRL_LINE_PIN, LOW);
     digitalWrite(PRESCTRL_ENABLE_PRES_CTRL, LOW);
     digitalWrite(PRESCTRL_ENABLE_PUMP_CTRL, LOW);
     analogWrite(PRESCTRL_PACT_OUT_PIN, 0);
