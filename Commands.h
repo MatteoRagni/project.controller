@@ -98,9 +98,13 @@ void cmd_automatic_temperature_control(float, volatile MachineState *m) {
 
 void cmd_manual_pressure_control(float, volatile MachineState *m) {
   m->state->config &= (0xFF ^ ControlEnabler::PActuator);
+  m->presctrl->disable();
 }
 
-void cmd_automatic_pressure_control(float, volatile MachineState *m) { m->state->config |= ControlEnabler::PActuator; }
+void cmd_automatic_pressure_control(float, volatile MachineState *m) { 
+  m->state->config |= ControlEnabler::PActuator;
+  m->presctrl->enable();  
+}
 
 void cmd_toggle_pause_cycle(float, volatile MachineState *m) {
   if (m->state->state == StateCode::Pause) {
