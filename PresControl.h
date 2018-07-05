@@ -189,7 +189,7 @@ class SquareWaveGeneratorDump {
       m->state->p_set = m->p_high;
       m->cycle += 1;  // Increment cycle number
     }
-    digitalWrite(pin_sel, (s ? HIGH : LOW);
+    digitalWrite(pin_sel, (s ? HIGH : LOW));
   };
 };
 
