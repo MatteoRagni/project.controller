@@ -248,7 +248,7 @@ class ControllerAlarm {
    * \return true if an error shall be raised
    */
   bool check_alarm() {
-    t = delta_t;
+    t += delta_t;
     float dp = abs((*p_meas) - (*p_set));
 
     if ((dp >= p_th) && (s != 1)) {
@@ -315,7 +315,7 @@ class AccumulatorAlarm {
    * \return true if an error shall be raised
    */
   bool check_alarm() {
-    t = delta_t;
+    t += delta_t;
     float dp = abs((*p_meas) - (*p_acc));
 
     if ((dp >= p_th) && (s != 1)) {
